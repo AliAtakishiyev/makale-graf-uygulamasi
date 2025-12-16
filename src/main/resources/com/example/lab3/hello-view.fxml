@@ -4,8 +4,10 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
 
 <BorderPane xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.example.lab3.HelloController">
@@ -28,13 +30,26 @@
     </center>
 
     <bottom>
-        <HBox spacing="10">
-            <padding>
-                <Insets top="10" right="10" bottom="10" left="10"/>
-            </padding>
-            <Button text="JSON'u Yükle ve İstatistikleri Göster"
-                    onAction="#onLoadJsonClick"/>
-        </HBox>
+        <VBox spacing="5">
+            <HBox spacing="10">
+                <padding>
+                    <Insets top="10" right="10" bottom="5" left="10"/>
+                </padding>
+                <Button text="JSON'u Yükle ve İstatistikleri Göster"
+                        onAction="#onLoadJsonClick"/>
+                <TextField fx:id="articleIdField" prefWidth="400"
+                           promptText="H-index hesaplamak için makale ID girin"/>
+                <Button text="Seçili Makale için H-index Hesapla"
+                        onAction="#onComputeHIndexClick"/>
+            </HBox>
+            <Label fx:id="errorLabel" text=""
+                   style="-fx-text-fill: red; -fx-font-weight: bold; -fx-font-size: 12;"
+                   alignment="CENTER_LEFT">
+                <padding>
+                    <Insets top="0" right="10" bottom="10" left="10"/>
+                </padding>
+            </Label>
+        </VBox>
     </bottom>
 
 </BorderPane>
