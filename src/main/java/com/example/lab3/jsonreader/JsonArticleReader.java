@@ -112,7 +112,15 @@ public class JsonArticleReader {
 
             switch (key) {
                 case "id" -> id = parseString();
-                case "doi" -> doi = parseString();
+                case "doi" -> {
+                    // Bazı kayıtlarda "doi": null olabiliyor.
+                    char valueStart = peek();
+                    if (valueStart == 'n') { // null
+                        skipValue();
+                    } else {
+                        doi = parseString();
+                    }
+                }
                 case "title" -> title = parseString();
                 case "year" -> year = parseIntNumber();
                 case "authors" -> authors = parseStringArray();
