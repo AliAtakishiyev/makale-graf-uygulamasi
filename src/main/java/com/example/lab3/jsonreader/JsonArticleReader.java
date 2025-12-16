@@ -204,10 +204,11 @@ public class JsonArticleReader {
                     case 'r' -> sb.append('\r');
                     case 't' -> sb.append('\t');
                     case 'u' -> {
-                        // \uXXXX unicode; bu projede Türkçe karakterler için önemli.
-                        String hex = "" + consume() + consume() + consume() + consume();
-                        char unicodeChar = (char) Integer.parseInt(hex, 16);
-                        sb.append(unicodeChar);
+                        // Unicode kaçışları bu projede kullanılmıyor; 4 hex karakterini atla.
+                        consume();
+                        consume();
+                        consume();
+                        consume();
                     }
                     default -> throw error("Bilinmeyen kaçış dizisi: \\" + esc);
                 }
