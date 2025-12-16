@@ -8,6 +8,7 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.Pane?>
 
 <BorderPane xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.example.lab3.HelloController">
@@ -23,10 +24,24 @@
     </top>
 
     <center>
-        <TextArea fx:id="outputArea"
-                  editable="false"
-                  wrapText="true"
-                  style="-fx-font-family: 'Consolas'; -fx-font-size: 13;"/>
+        <HBox spacing="10">
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
+
+            <!-- Sol: Metin çıktı alanı (daha dar) -->
+            <TextArea fx:id="outputArea"
+                      editable="false"
+                      wrapText="true"
+                      prefWidth="350"
+                      style="-fx-font-family: 'Consolas'; -fx-font-size: 13;"/>
+
+            <!-- Sağ: Graf alanı (daha geniş, büyüyebilen) -->
+            <Pane fx:id="graphPane"
+                  HBox.hgrow="ALWAYS"
+                  prefWidth="800"
+                  style="-fx-background-color: #f5f5f5; -fx-border-color: #cccccc;"/>
+        </HBox>
     </center>
 
     <bottom>

@@ -6,10 +6,12 @@ import com.example.lab3.jsonreader.JsonArticleReader;
 import com.example.lab3.models.Article;
 import com.example.lab3.models.ArticleGraph;
 import com.example.lab3.models.ArticleNode;
+import com.example.lab3.ui.GraphRenderer;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.Pane;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -30,6 +32,9 @@ public class HelloController {
 
     @FXML
     private Label errorLabel;
+
+    @FXML
+    private Pane graphPane;
 
     // Bellekteki tam graf; JSON yüklendikten sonra doldurulacak
     private ArticleGraph graph;
@@ -67,6 +72,7 @@ public class HelloController {
 
             String message = sb.toString();
             outputArea.setText(message);
+            graphPane.getChildren().clear(); // JSON yeniden yüklendiğinde grafı temizle
             System.out.println(message);
         } catch (IOException e) {
             showError("JSON okuma hatası: " + e.getMessage());
@@ -119,6 +125,8 @@ public class HelloController {
             }
 
             outputArea.appendText(sb.toString());
+            // Grafiği güncelle
+            GraphRenderer.drawHCoreGraph(graphPane, node, result.getHCoreNodes());
             System.out.println(sb);
         } catch (Exception ex) {
             showError("Beklenmeyen hata: " + ex.getMessage());
