@@ -23,7 +23,11 @@
       "Optics",
       "Physics"
     ],
-    "referenced_works": [],
+    "referenced_works": [
+
+      "https://openalex.org/W2972970334",
+      "https://openalex.org/W2493402089"
+    ],
     "in_json_reference_count": 0
   },
   {

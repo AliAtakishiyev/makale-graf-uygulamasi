@@ -11,12 +11,12 @@ import java.util.Map;
  *
  * Bu sınıf "tam grafı" temsil eder; ekranda gösterilen alt-graf bu yapıdan türetilecektir.
  */
-public class ArticleGraph {
+public class MakaleGrafı {
 
     // id -> node
-    private final Map<String, ArticleNode> nodesById = new HashMap<>();
+    private final Map<String, MakaleDugumu> nodesById = new HashMap<>();
 
-    private ArticleGraph() {
+    private MakaleGrafı() {
     }
 
     /**
@@ -25,19 +25,19 @@ public class ArticleGraph {
      * @param articles Article listesi
      * @return Kurulmuş ArticleGraph
      */
-    public static ArticleGraph buildFromArticles(List<Article> articles) {
-        ArticleGraph graph = new ArticleGraph();
+    public static MakaleGrafı buildFromArticles(List<MakaleModeli> articles) {
+        MakaleGrafı graph = new MakaleGrafı();
 
         // 1) Tüm makaleler için node oluştur
-        for (Article article : articles) {
-            graph.nodesById.put(article.getId(), new ArticleNode(article));
+        for (MakaleModeli article : articles) {
+            graph.nodesById.put(article.getId(), new MakaleDugumu(article));
         }
 
         // 2) Referanslara göre kenarları kur
-        for (ArticleNode node : graph.nodesById.values()) {
-            Article article = node.getArticle();
+        for (MakaleDugumu node : graph.nodesById.values()) {
+            MakaleModeli article = node.getArticle();
             for (String refId : article.getReferencedWorks()) {
-                ArticleNode target = graph.nodesById.get(refId);
+                MakaleDugumu target = graph.nodesById.get(refId);
                 if (target != null) {
                     // yönlü kenar: node (source) -> target
                     node.addOutgoing(target);
@@ -49,11 +49,11 @@ public class ArticleGraph {
         return graph;
     }
 
-    public ArticleNode getNode(String id) {
+    public MakaleDugumu getNode(String id) {
         return nodesById.get(id);
     }
 
-    public Collection<ArticleNode> getAllNodes() {
+    public Collection<MakaleDugumu> getAllNodes() {
         return Collections.unmodifiableCollection(nodesById.values());
     }
 
@@ -66,40 +66,29 @@ public class ArticleGraph {
      */
     public int getEdgeCount() {
         int sum = 0;
-        for (ArticleNode node : nodesById.values()) {
+        for (MakaleDugumu node : nodesById.values()) {
             sum += node.getOutDegree();
         }
         return sum;
     }
 
-    /**
-     * Toplam verilen referans sayısı (tüm düğümlerin out-degree toplamı).
-     * Bu aslında getEdgeCount() ile aynı sonucu verir.
-     */
     public int getTotalOutgoingReferences() {
         return getEdgeCount();
     }
 
-    /**
-     * Toplam alınan referans sayısı (tüm düğümlerin in-degree toplamı).
-     */
     public int getTotalIncomingReferences() {
         int sum = 0;
-        for (ArticleNode node : nodesById.values()) {
+        for (MakaleDugumu node : nodesById.values()) {
             sum += node.getInDegree();
         }
         return sum;
     }
 
-    /**
-     * En çok referans alan makale bilgisi.
-     * @return ArticleIdAndCount record'u (id ve aldığı referans sayısı)
-     */
     public ArticleIdAndCount getMostCitedArticle() {
-        ArticleNode mostCited = null;
+        MakaleDugumu mostCited = null;
         int maxInDegree = -1;
 
-        for (ArticleNode node : nodesById.values()) {
+        for (MakaleDugumu node : nodesById.values()) {
             int inDegree = node.getInDegree();
             if (inDegree > maxInDegree) {
                 maxInDegree = inDegree;
@@ -113,15 +102,11 @@ public class ArticleGraph {
         return new ArticleIdAndCount(mostCited.getArticle().getId(), maxInDegree);
     }
 
-    /**
-     * En çok referans veren makale bilgisi.
-     * @return ArticleIdAndCount record'u (id ve verdiği referans sayısı)
-     */
     public ArticleIdAndCount getMostCitingArticle() {
-        ArticleNode mostCiting = null;
+        MakaleDugumu mostCiting = null;
         int maxOutDegree = -1;
 
-        for (ArticleNode node : nodesById.values()) {
+        for (MakaleDugumu node : nodesById.values()) {
             int outDegree = node.getOutDegree();
             if (outDegree > maxOutDegree) {
                 maxOutDegree = outDegree;
@@ -135,9 +120,6 @@ public class ArticleGraph {
         return new ArticleIdAndCount(mostCiting.getArticle().getId(), maxOutDegree);
     }
 
-    /**
-     * Makale ID ve sayı bilgisini taşıyan basit record.
-     */
     public record ArticleIdAndCount(String articleId, int count) {
     }
 }

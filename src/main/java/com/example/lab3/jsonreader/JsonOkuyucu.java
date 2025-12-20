@@ -1,6 +1,6 @@
 package com.example.lab3.jsonreader;
 
-import com.example.lab3.models.Article;
+import com.example.lab3.models.MakaleModeli;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -9,56 +9,28 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Hazır JSON kütüphaneleri kullanılmadan makale listesini okuyan basit JSON okuyucu.
- *
- * Bu sınıf yalnızca bu projede kullanılan JSON formatını destekler:
- *
- * [
- *   {
- *     "id": "...",
- *     "doi": "...",
- *     "title": "...",
- *     "year": 2003,
- *     "authors": ["A", "B"],
- *     "referenced_works": ["...", "..."],
- *     ...
- *   },
- *   ...
- * ]
- *
- * Genel bir JSON parser olmak zorunda değildir; ihtiyaç duyduğumuz alanları güvenli bir
- * şekilde okuyup gerisini atlaması yeterlidir.
- */
-public class JsonArticleReader {
+public class JsonOkuyucu {
 
     private final String text;
     private int index;
 
-    private JsonArticleReader(String text) {
+    private JsonOkuyucu(String text) {
         this.text = text;
         this.index = 0;
     }
 
-    /**
-     * Verilen dosya yolundan tüm makaleleri okur.
-     */
-    public static List<Article> readArticles(Path path) throws IOException {
+    public static List<MakaleModeli> readArticles(Path path) throws IOException {
         String content = Files.readString(path, StandardCharsets.UTF_8);
-        JsonArticleReader reader = new JsonArticleReader(content);
+        JsonOkuyucu reader = new JsonOkuyucu(content);
         return reader.parseArticleArray();
     }
 
-    // ------------------------------------------------------------------------
-    // Makale listesi parse işlemi
-    // ------------------------------------------------------------------------
-
-    private List<Article> parseArticleArray() {
+    private List<MakaleModeli> parseArticleArray() {
         skipWhitespace();
         expect('[');
         skipWhitespace();
 
-        List<Article> result = new ArrayList<>();
+        List<MakaleModeli> result = new ArrayList<>();
 
         while (true) {
             skipWhitespace();
@@ -67,7 +39,7 @@ public class JsonArticleReader {
                 break;
             }
 
-            Article a = parseArticleObject();
+            MakaleModeli a = parseArticleObject();
             result.add(a);
 
             skipWhitespace();
@@ -86,7 +58,7 @@ public class JsonArticleReader {
         return result;
     }
 
-    private Article parseArticleObject() {
+    private MakaleModeli parseArticleObject() {
         skipWhitespace();
         expect('{');
 
@@ -113,7 +85,6 @@ public class JsonArticleReader {
             switch (key) {
                 case "id" -> id = parseString();
                 case "doi" -> {
-                    // Bazı kayıtlarda "doi": null olabiliyor.
                     char valueStart = peek();
                     if (valueStart == 'n') { // null
                         skipValue();
@@ -125,7 +96,7 @@ public class JsonArticleReader {
                 case "year" -> year = parseIntNumber();
                 case "authors" -> authors = parseStringArray();
                 case "referenced_works" -> referencedWorks = parseStringArray();
-                default -> skipValue(); // Kullanmadığımız alanları atla
+                default -> skipValue();
             }
 
             skipWhitespace();
@@ -145,12 +116,9 @@ public class JsonArticleReader {
             throw error("Makale nesnesinde zorunlu alan eksik: id veya title null.");
         }
 
-        return new Article(id, doi, title, year, authors, referencedWorks);
+        return new MakaleModeli(id, doi, title, year, authors, referencedWorks);
     }
 
-    // ------------------------------------------------------------------------
-    // Temel JSON parse yardımcıları
-    // ------------------------------------------------------------------------
 
     private List<String> parseStringArray() {
         skipWhitespace();
@@ -199,7 +167,6 @@ public class JsonArticleReader {
                 break;
             }
             if (c == '\\') {
-                // Kaçış karakterleri: bu projede basitçe en yaygın olanları desteklemek yeterli
                 if (isAtEnd()) {
                     throw error("Eksik kaçış dizisi.");
                 }
@@ -212,7 +179,6 @@ public class JsonArticleReader {
                     case 'r' -> sb.append('\r');
                     case 't' -> sb.append('\t');
                     case 'u' -> {
-                        // Unicode kaçışları bu projede kullanılmıyor; 4 hex karakterini atla.
                         consume();
                         consume();
                         consume();
@@ -249,9 +215,6 @@ public class JsonArticleReader {
         return Integer.parseInt(sb.toString());
     }
 
-    /**
-     * Kullanmadığımız alanları atlamak için genel JSON value skip fonksiyonu.
-     */
     private void skipValue() {
         skipWhitespace();
         char c = peek();
@@ -259,10 +222,9 @@ public class JsonArticleReader {
             case '{' -> skipObject();
             case '[' -> skipArray();
             case '"' -> {
-                parseString(); // sonucu kullanmıyoruz
+                parseString();
             }
             default -> {
-                // number, true, false, null gibi değerleri karakter karakter atla
                 while (!isAtEnd()) {
                     c = peek();
                     if (c == ',' || c == '}' || c == ']') {
@@ -291,10 +253,6 @@ public class JsonArticleReader {
             else if (c == ']') depth--;
         } while (depth > 0 && !isAtEnd());
     }
-
-    // ------------------------------------------------------------------------
-    // Düşük seviye okuma fonksiyonları
-    // ------------------------------------------------------------------------
 
     private void skipWhitespace() {
         while (!isAtEnd()) {

@@ -5,13 +5,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * Basit makale veri modeli.
- *
- * Bu sınıf JSON okuyucu tarafından doldurulacak ve
- * graf modelinin temel düğüm bilgisini taşıyacaktır.
- */
-public class Article {
+
+public class MakaleModeli {
 
     private final String id;
     private final String doi;
@@ -20,7 +15,7 @@ public class Article {
     private final List<String> authors;
     private final List<String> referencedWorks;
 
-    public Article(
+    public MakaleModeli(
             String id,
             String doi,
             String title,

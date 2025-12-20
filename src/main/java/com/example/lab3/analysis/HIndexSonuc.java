@@ -1,19 +1,17 @@
 package com.example.lab3.analysis;
 
-import com.example.lab3.models.ArticleNode;
+import com.example.lab3.models.MakaleDugumu;
 
 import java.util.List;
 
-/**
- * Bir makale için h-index, h-core ve h-median sonuçlarını tutar.
- */
-public class HIndexResult {
+
+public class HIndexSonuc {
 
     private final int hIndex;
     private final double hMedian;
-    private final List<ArticleNode> hCoreNodes;
+    private final List<MakaleDugumu> hCoreNodes;
 
-    public HIndexResult(int hIndex, double hMedian, List<ArticleNode> hCoreNodes) {
+    public HIndexSonuc(int hIndex, double hMedian, List<MakaleDugumu> hCoreNodes) {
         this.hIndex = hIndex;
         this.hMedian = hMedian;
         this.hCoreNodes = hCoreNodes;
@@ -27,7 +25,7 @@ public class HIndexResult {
         return hMedian;
     }
 
-    public List<ArticleNode> getHCoreNodes() {
+    public List<MakaleDugumu> getHCoreNodes() {
         return hCoreNodes;
     }
 }
