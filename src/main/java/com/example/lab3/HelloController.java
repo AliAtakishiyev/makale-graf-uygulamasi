@@ -18,10 +18,7 @@ import javafx.scene.layout.Pane;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 public class HelloController {
 
@@ -96,45 +93,49 @@ public class HelloController {
 
 
     @FXML
-    protected void onKCoreButtonClick() {
-        clearError();
-        if (graph == null) {
-            showError("Lütfen önce JSON dosyasını yükleyin.");
+    protected void onLocalKCoreClick() {
+        outputArea.setText("");
+
+        if (nodePositions.isEmpty()) {
+            outputArea.setText("Hata: Ekranda bir graf yok.");
             return;
         }
 
         try {
-            if (kInput == null) {
-                showError("Arayüz hatası: kInput alanı bulunamadı.");
+            if (kInput == null || kInput.getText().isBlank()) {
+                outputArea.setText("Hata: Lütfen bir k değeri girin.");
                 return;
             }
+            int k = Integer.parseInt(kInput.getText().trim());
 
-            String kText = kInput.getText();
-            if (kText == null || kText.isBlank()) {
-                showError("Lütfen bir k değeri girin.");
-                return;
+            List<MakaleDugumu> visibleNodes = new ArrayList<>(nodePositions.keySet());
+
+            List<MakaleDugumu> survivors = KCoreHesaplama.computeLocalKCore(visibleNodes, k);
+
+            // 3. Bilgi Ver
+            outputArea.setText("=== Yerel K-Core Analizi ===\n");
+            outputArea.appendText("Analiz edilen düğüm: " + visibleNodes.size() + "\n");
+            outputArea.appendText("K=" + k + " çekirdeğindeki düğüm: " + survivors.size() + "\n");
+
+            if (survivors.isEmpty()) {
+                outputArea.appendText("Sonuç: Bu kriteri sağlayan hiçbir düğüm yok.\n");
+            } else {
+                outputArea.appendText("Sonuç: K-Core üyeleri KIRMIZI, elenenler GRİ renkle gösterildi.\n");
             }
 
-            int k = Integer.parseInt(kText.trim());
-
-            // Hesapla
-            List<MakaleDugumu> kCoreNodes = KCoreHesaplama.computeKCore(graph, k);
-
-            outputArea.setText("=== K-Core Sonuçları ===\n");
-            outputArea.appendText("k = " + k + " için bulunan düğüm sayısı: " + kCoreNodes.size() + "\n");
-            outputArea.appendText("(K-Core görünümü şu an statiktir, tıklama özelliği H-Index modunda aktiftir.)\n");
-
-            // Çizdir (K-Core için özel renkli çizim)
-            GrafRenderlayici.drawKCoreGraph(graphPane, kCoreNodes);
+            GrafRenderlayici.drawInteractiveGraphWithHighlight(
+                    graphPane,
+                    nodePositions, // Tüm pozisyonlar (silinmedi)
+                    survivors,     // Sadece kırmızı olacaklar listesi
+                    this::handleNodeClick // Tıklama özelliği bozulmasın
+            );
 
         } catch (NumberFormatException e) {
-            showError("Lütfen k değeri için geçerli bir tamsayı girin.");
+            outputArea.setText("Hata: Geçersiz sayı.");
         } catch (Exception e) {
-            showError("K-Core hatası: " + e.getMessage());
             e.printStackTrace();
         }
     }
-
 
     @FXML
     protected void onComputeHIndexClick() {
@@ -197,7 +198,6 @@ public class HelloController {
 
 
     private void handleNodeClick(MakaleDugumu clickedNode) {
-        // Bu makalenin referans verdiği makaleler (Outgoing)
         List<MakaleDugumu> references = clickedNode.getOutgoing();
 
         if (references.isEmpty()) {

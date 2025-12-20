@@ -13,8 +13,6 @@ public class KCoreHesaplama {
     public static List<MakaleDugumu> computeKCore(MakaleGrafı graph, int k) { // Ana Metod
         List<MakaleDugumu> activeNodes = new ArrayList<>(graph.getAllNodes()); // Kopyalama
 
-        // Listede "bu eleman var mı" diye aramak yavaş olduğu için,
-        // hızlı kontrol (O(1)) yapabilmek adına bir de Set (Küme) oluşturuyoruz.
         Set<MakaleDugumu> activeSet = new HashSet<>(activeNodes);
 
         boolean removedAny;
@@ -59,5 +57,36 @@ public class KCoreHesaplama {
         }
 
         return degree;
+    }
+
+
+    public static List<MakaleDugumu> computeLocalKCore(List<MakaleDugumu> visibleNodes, int k) {
+        List<MakaleDugumu> activeNodes = new ArrayList<>(visibleNodes);
+
+        // Hızlı arama için Set
+        Set<MakaleDugumu> activeSet = new HashSet<>(activeNodes);
+
+        boolean removedAny;
+        do {
+            removedAny = false;
+            List<MakaleDugumu> toRemove = new ArrayList<>();
+
+            for (MakaleDugumu node : activeNodes) {
+                int currentDegree = calculateDegreeInSet(node, activeSet);
+
+                if (currentDegree < k) {
+                    toRemove.add(node);
+                }
+            }
+
+            if (!toRemove.isEmpty()) {
+                activeNodes.removeAll(toRemove);
+                activeSet.removeAll(toRemove);
+                removedAny = true;
+            }
+
+        } while (removedAny);
+
+        return activeNodes;
     }
 }

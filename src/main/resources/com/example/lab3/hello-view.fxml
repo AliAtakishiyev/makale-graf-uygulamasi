@@ -82,8 +82,11 @@
 
             <HBox spacing="10" alignment="CENTER_LEFT">
                 <Label text="K-Core Analizi:" style="-fx-font-weight: bold;"/>
-                <TextField fx:id="kInput" promptText="k değeri (örn: 2)" prefWidth="150"/>
-                <Button text="K-Core Hesapla" onAction="#onKCoreButtonClick"/>
+                <TextField fx:id="kInput" promptText="k değeri" prefWidth="80"/>
+
+                <Button text="K-Core Uygula (Ekranda)"
+                        onAction="#onLocalKCoreClick"
+                        style="-fx-background-color: #ffe0b2; -fx-border-color: #ff9800;"/>
             </HBox>
 
             <HBox spacing="10" alignment="CENTER_LEFT">

@@ -60,7 +60,7 @@ public class GrafRenderlayici {
         pane.getChildren().add(group);
     }
 
-    public static void drawKCoreGraph(Pane pane, List<MakaleDugumu> kCoreNodes) {
+    public static void drawKCoreGraph(Pane pane, List<MakaleDugumu> kCoreNodes, String targetId) {
         pane.getChildren().clear();
 
         if (kCoreNodes.isEmpty()) {
@@ -315,5 +315,61 @@ public class GrafRenderlayici {
         int totalRows = (int) Math.ceil((double) sortedNodes.size() / cols);
         double requiredHeight = startY + totalRows * gapY + 100;
         pane.setPrefHeight(Math.max(600, requiredHeight));
+    }
+
+
+    public static void drawInteractiveGraphWithHighlight(Pane pane, Map<MakaleDugumu, Point2D> nodePositions,
+                                                         List<MakaleDugumu> kCoreNodes,
+                                                         Consumer<MakaleDugumu> onNodeClick) {
+        pane.getChildren().clear();
+
+        if (nodePositions == null || nodePositions.isEmpty()) {
+            return;
+        }
+
+        Group group = new Group();
+
+        for (Map.Entry<MakaleDugumu, Point2D> entry : nodePositions.entrySet()) {
+            MakaleDugumu source = entry.getKey();
+            Point2D p1 = entry.getValue();
+
+            for (MakaleDugumu target : source.getOutgoing()) {
+                if (nodePositions.containsKey(target)) {
+                    Point2D p2 = nodePositions.get(target);
+
+                    Line line = new Line(p1.getX(), p1.getY(), p2.getX(), p2.getY());
+
+                    // --- RENK KARARI ---
+                    boolean isCoreEdge = kCoreNodes.contains(source) && kCoreNodes.contains(target);
+
+                    if (isCoreEdge) {
+                        line.setStroke(Color.RED);        // Çekirdek bağlantısı
+                        line.setStrokeWidth(3.0);         // Kalın
+                    } else {
+                        line.setStroke(Color.LIGHTGRAY);  // Zayıf bağlantı
+                        line.setStrokeWidth(1.0);         // İnce
+                    }
+
+                    group.getChildren().add(line);
+                }
+            }
+        }
+
+        for (Map.Entry<MakaleDugumu, Point2D> entry : nodePositions.entrySet()) {
+            MakaleDugumu node = entry.getKey();
+            Point2D pos = entry.getValue();
+
+
+            Color nodeColor;
+            if (kCoreNodes.contains(node)) {
+                nodeColor = Color.SALMON; // K-Core Üyesi
+            } else {
+                nodeColor = Color.LIGHTGRAY; // Dışlananlar
+            }
+
+            drawNode(group, pos.getX(), pos.getY(), node, nodeColor, onNodeClick);
+        }
+
+        pane.getChildren().add(group);
     }
 }
