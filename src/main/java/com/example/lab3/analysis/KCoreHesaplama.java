@@ -63,7 +63,6 @@ public class KCoreHesaplama {
     public static List<MakaleDugumu> computeLocalKCore(List<MakaleDugumu> visibleNodes, int k) {
         List<MakaleDugumu> activeNodes = new ArrayList<>(visibleNodes);
 
-        // Hızlı arama için Set
         Set<MakaleDugumu> activeSet = new HashSet<>(activeNodes);
 
         boolean removedAny;

@@ -6,11 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Tüm makaleleri ve aralarındaki referans ilişkilerini bellekte tutan graf yapısı.
- *
- * Bu sınıf "tam grafı" temsil eder; ekranda gösterilen alt-graf bu yapıdan türetilecektir.
- */
+
 public class MakaleGrafı {
 
     // id -> node
@@ -19,27 +15,19 @@ public class MakaleGrafı {
     private MakaleGrafı() {
     }
 
-    /**
-     * JSON'dan okunmuş makale listesinden yönlü graf oluşturur.
-     *
-     * @param articles Article listesi
-     * @return Kurulmuş ArticleGraph
-     */
+
     public static MakaleGrafı buildFromArticles(List<MakaleModeli> articles) {
         MakaleGrafı graph = new MakaleGrafı();
 
-        // 1) Tüm makaleler için node oluştur
         for (MakaleModeli article : articles) {
             graph.nodesById.put(article.getId(), new MakaleDugumu(article));
         }
 
-        // 2) Referanslara göre kenarları kur
         for (MakaleDugumu node : graph.nodesById.values()) {
             MakaleModeli article = node.getArticle();
             for (String refId : article.getReferencedWorks()) {
                 MakaleDugumu target = graph.nodesById.get(refId);
                 if (target != null) {
-                    // yönlü kenar: node (source) -> target
                     node.addOutgoing(target);
                     target.addIncoming(node);
                 }
@@ -61,9 +49,7 @@ public class MakaleGrafı {
         return nodesById.size();
     }
 
-    /**
-     * Yönlü kenar sayısı (toplam referans ilişkisi).
-     */
+
     public int getEdgeCount() {
         int sum = 0;
         for (MakaleDugumu node : nodesById.values()) {

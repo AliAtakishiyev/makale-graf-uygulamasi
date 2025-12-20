@@ -22,65 +22,55 @@ import java.util.*;
 
 public class HelloController {
 
+    // JSON DOSYA YOLUNU KENDİ BİLGİSAYARINA GÖRE GÜNCELLEMEYİ UNUTMA
     private static final Path ARTICLES_JSON_PATH = Path.of(
             "C:/Users/dgknb/OneDrive/Desktop/Prolab3/makale-graf-uygulamasi/src/main/java/com/example/lab3/utlis/makale.json"
     );
 
-    @FXML
-    private TextArea outputArea;
-
+    @FXML private TextArea outputArea;
     @FXML private TextField pathStartField;
     @FXML private TextField pathEndField;
-
-    @FXML
-    private TextField articleIdField;
-
-    @FXML
-    private TextField kInput;
-
-    @FXML
-    private Label errorLabel;
-
-    @FXML
-    private Pane graphPane;
+    @FXML private TextField articleIdField;
+    @FXML private TextField kInput;
+    @FXML private Label errorLabel;
+    @FXML private Pane graphPane;
 
     private MakaleGrafı graph;
-
     private final Map<MakaleDugumu, Point2D> nodePositions = new HashMap<>();
-    private final Random random = new Random();
 
+    // Rastgelelik için (Genişletme sırasında kullanılır)
+    private final Random random = new Random();
 
     @FXML
     protected void onLoadJsonClick() {
         clearError();
         try {
-            // 1) JSON'dan makaleleri oku
             List<MakaleModeli> articles = JsonOkuyucu.readArticles(ARTICLES_JSON_PATH);
-
-            // 2) Bellekte tam grafı kur
             this.graph = MakaleGrafı.buildFromArticles(articles);
 
-            // 3) İstatistikleri hesapla
             int nodeCount = graph.getNodeCount();
             int edgeCount = graph.getEdgeCount();
             MakaleGrafı.ArticleIdAndCount mostCited = graph.getMostCitedArticle();
             MakaleGrafı.ArticleIdAndCount mostCiting = graph.getMostCitingArticle();
 
-            // 4) Sonuçları göster
             StringBuilder sb = new StringBuilder();
             sb.append("=== Genel Graf İstatistikleri ===\n");
             sb.append("Toplam Makale: ").append(nodeCount).append("\n");
             sb.append("Toplam Referans: ").append(edgeCount).append("\n");
-            sb.append("En Çok Atıf Alan: ").append(mostCited.articleId())
-                    .append(" (").append(mostCited.count()).append(")\n");
-            sb.append("En Çok Atıf Veren: ").append(mostCiting.articleId())
-                    .append(" (").append(mostCiting.count()).append(")\n");
+
+            if (mostCited != null) {
+                sb.append("En Çok Atıf Alan: ").append(mostCited.articleId())
+                        .append(" (").append(mostCited.count()).append(")\n");
+            }
+            if (mostCiting != null) {
+                sb.append("En Çok Atıf Veren: ").append(mostCiting.articleId())
+                        .append(" (").append(mostCiting.count()).append(")\n");
+            }
             sb.append("\nİşlem yapmak için ID veya K değeri giriniz.\n");
 
             outputArea.setText(sb.toString());
             graphPane.getChildren().clear();
-            nodePositions.clear(); // Eski pozisyonları temizle
-            System.out.println(sb);
+            nodePositions.clear();
 
         } catch (IOException e) {
             showError("JSON okuma hatası: " + e.getMessage());
@@ -90,7 +80,6 @@ public class HelloController {
             e.printStackTrace();
         }
     }
-
 
     @FXML
     protected void onLocalKCoreClick() {
@@ -109,10 +98,8 @@ public class HelloController {
             int k = Integer.parseInt(kInput.getText().trim());
 
             List<MakaleDugumu> visibleNodes = new ArrayList<>(nodePositions.keySet());
-
             List<MakaleDugumu> survivors = KCoreHesaplama.computeLocalKCore(visibleNodes, k);
 
-            // 3. Bilgi Ver
             outputArea.setText("=== Yerel K-Core Analizi ===\n");
             outputArea.appendText("Analiz edilen düğüm: " + visibleNodes.size() + "\n");
             outputArea.appendText("K=" + k + " çekirdeğindeki düğüm: " + survivors.size() + "\n");
@@ -125,9 +112,9 @@ public class HelloController {
 
             GrafRenderlayici.drawInteractiveGraphWithHighlight(
                     graphPane,
-                    nodePositions, // Tüm pozisyonlar (silinmedi)
-                    survivors,     // Sadece kırmızı olacaklar listesi
-                    this::handleNodeClick // Tıklama özelliği bozulmasın
+                    nodePositions,
+                    survivors,
+                    this::handleNodeClick
             );
 
         } catch (NumberFormatException e) {
@@ -160,25 +147,30 @@ public class HelloController {
         }
 
         try {
+            // 1. Hesapla
             HIndexSonuc result = HIndexHesaplama.computeForArticle(graph, id);
 
+            // 2. Bilgi Ver
             StringBuilder sb = new StringBuilder();
             sb.append("=== H-index Sonuçları ===\n");
             sb.append("Makale: ").append(centerNode.getArticle().getTitle()).append("\n");
             sb.append("h-index: ").append(result.getHIndex()).append("\n");
             sb.append("h-median: ").append(result.getHMedian()).append("\n");
             sb.append("h-core sayısı: ").append(result.getHCoreNodes().size()).append("\n");
-            sb.append("\n[BİLGİ] Düğümlere tıklayarak referanslarını (mavi oklar) görebilirsiniz.");
+            sb.append("\n[BİLGİ] Düğümlere tıklayarak grafiği genişletebilirsiniz (H-Core eklenir).");
 
             outputArea.setText(sb.toString());
 
+            // 3. Pozisyonları Sıfırla ve Çizim
             nodePositions.clear();
 
             double paneW = graphPane.getWidth() > 0 ? graphPane.getWidth() : 800;
             double paneH = graphPane.getHeight() > 0 ? graphPane.getHeight() : 600;
 
+            // Merkezi yerleştir
             nodePositions.put(centerNode, new Point2D(paneW / 2, paneH / 2));
 
+            // H-Core elemanlarını etrafa diz
             List<MakaleDugumu> hCore = result.getHCoreNodes();
             double radius = 150;
             for (int i = 0; i < hCore.size(); i++) {
@@ -196,86 +188,69 @@ public class HelloController {
         }
     }
 
-
+    // --- GÜNCELLENEN KISIM BURASI ---
+    // Tıklanan düğümün H-Index'ini hesaplar ve grafiği H-Core ile genişletir.
     private void handleNodeClick(MakaleDugumu clickedNode) {
-        List<MakaleDugumu> references = clickedNode.getOutgoing();
+        String newId = clickedNode.getArticle().getId();
 
-        if (references.isEmpty()) {
-            outputArea.appendText("\n-> Bilgi: Bu makale veri setindeki başka bir makaleye atıf vermiyor.");
-            return;
+        // 1. ID Kutusunu güncelle
+        articleIdField.setText(newId);
+
+        // 2. Tıklanan düğüm için H-Index Hesapla
+        HIndexSonuc result = HIndexHesaplama.computeForArticle(graph, newId);
+
+        // 3. Sonuçları Ekrana Bas (Eskileri silmeden altına ekle)
+        outputArea.appendText("\n\n----------------------------------\n");
+        outputArea.appendText("GENİŞLETİLEN MAKALE: " + clickedNode.getArticle().getTitle() + "\n");
+        outputArea.appendText("ID: " + newId + "\n");
+        outputArea.appendText("h-index: " + result.getHIndex() + "\n");
+        outputArea.appendText("h-median: " + result.getHMedian() + "\n");
+        outputArea.appendText("Yeni h-core bağlantıları eklendi (" + result.getHCoreNodes().size() + " adet).");
+
+        // 4. Yeni Düğümleri Haritaya Ekle
+        // Tıklanan düğümün etrafına, mevcut pozisyonu merkez alarak ekliyoruz.
+        Point2D centerPos = nodePositions.get(clickedNode);
+
+        // Eğer düğüm bir şekilde haritada yoksa (hata durumu), ortaya al.
+        if (centerPos == null) {
+            centerPos = new Point2D(graphPane.getWidth() / 2, graphPane.getHeight() / 2);
         }
 
+        double dist = 120.0; // Merkezden uzaklık
         boolean anyNewAdded = false;
-        Point2D parentPos = nodePositions.get(clickedNode);
 
-
-        for (MakaleDugumu ref : references) {
-            if (!nodePositions.containsKey(ref)) {
+        for (MakaleDugumu neighbor : result.getHCoreNodes()) {
+            // Eğer bu düğüm zaten ekranda varsa yerine dokunma
+            if (!nodePositions.containsKey(neighbor)) {
+                // Rastgele bir açı ile etrafa dağıt
                 double angle = random.nextDouble() * 2 * Math.PI;
-                double dist = 100 + random.nextDouble() * 50;
 
-                double newX = parentPos.getX() + dist * Math.cos(angle);
-                double newY = parentPos.getY() + dist * Math.sin(angle);
+                double newX = centerPos.getX() + dist * Math.cos(angle);
+                double newY = centerPos.getY() + dist * Math.sin(angle);
 
-                double paneW = graphPane.getWidth();
-                double paneH = graphPane.getHeight();
+                // Ekran sınırlarına çarpmasın diye basit kontrol
+                double paneW = graphPane.getWidth() > 0 ? graphPane.getWidth() : 800;
+                double paneH = graphPane.getHeight() > 0 ? graphPane.getHeight() : 600;
                 newX = Math.max(40, Math.min(newX, paneW - 40));
                 newY = Math.max(40, Math.min(newY, paneH - 40));
 
-                nodePositions.put(ref, new Point2D(newX, newY));
+                nodePositions.put(neighbor, new Point2D(newX, newY));
                 anyNewAdded = true;
             }
         }
 
+        // 5. Grafiği Yeniden Çiz
         if (anyNewAdded) {
-            applySimpleForceLayout();
+            // İsterseniz burada force layout çağırabilirsiniz ama karışıklık olmaması için
+            // şimdilik sadece çizimi yeniliyoruz.
             redrawInteractive();
-            outputArea.appendText("\n-> " + clickedNode.getArticle().getId() + " genişletildi (" + references.size() + " yeni bağlantı).");
         } else {
-            outputArea.appendText("\n-> " + clickedNode.getArticle().getId() + ": Tüm referansları zaten ekranda.");
+            outputArea.appendText("\n-> (Bu makalenin tüm H-Core bağlantıları zaten ekranda.)");
         }
     }
-
 
     private void redrawInteractive() {
-        // GraphRenderer.drawInteractiveGraph metodunu kullanıyoruz
         GrafRenderlayici.drawInteractiveGraph(graphPane, nodePositions, this::handleNodeClick);
-    }
-
-
-    private void applySimpleForceLayout() {
-        int iterations = 10; // Yerleşim döngüsü sayısı
-        double minDistance = 80.0; // İdeal minimum mesafe (Düğüm çapı + boşluk)
-
-        for (int i = 0; i < iterations; i++) {
-            for (Map.Entry<MakaleDugumu, Point2D> e1 : nodePositions.entrySet()) {
-                for (Map.Entry<MakaleDugumu, Point2D> e2 : nodePositions.entrySet()) {
-                    if (e1.getKey() == e2.getKey()) continue;
-
-                    Point2D p1 = e1.getValue();
-                    Point2D p2 = e2.getValue();
-
-                    double dist = p1.distance(p2);
-
-                    // Çok yakınlarsa it
-                    if (dist < minDistance && dist > 1.0) {
-                        double push = (minDistance - dist) / 2.0; // Ne kadar itilecek
-                        double dx = p1.getX() - p2.getX();
-                        double dy = p1.getY() - p2.getY();
-
-                        // Vektörü normalize et
-                        double len = Math.sqrt(dx * dx + dy * dy);
-                        dx /= len;
-                        dy /= len;
-
-                        // p1'i it
-                        e1.setValue(new Point2D(p1.getX() + dx * push, p1.getY() + dy * push));
-                        // p2'yi aksi yöne it
-                        e2.setValue(new Point2D(p2.getX() - dx * push, p2.getY() - dy * push));
-                    }
-                }
-            }
-        }
     }
 
     @FXML
@@ -332,7 +307,6 @@ public class HelloController {
 
         try {
             List<MakaleDugumu> allNodes = new java.util.ArrayList<>(graph.getAllNodes());
-
             allNodes.sort((n1, n2) -> n1.getArticle().getId().compareTo(n2.getArticle().getId()));
 
             int limit = Math.min(allNodes.size(), 100);
@@ -352,15 +326,12 @@ public class HelloController {
 
     private void handleChainNodeClick(MakaleDugumu node) {
         articleIdField.setText(node.getArticle().getId());
-
         onComputeHIndexClick();
     }
-
 
     @FXML
     protected void onZoomInClick() {
         double currentScale = graphPane.getScaleX();
-
         if (currentScale < 5.0) {
             double newScale = currentScale * 1.1;
             graphPane.setScaleX(newScale);
@@ -371,7 +342,6 @@ public class HelloController {
     @FXML
     protected void onZoomOutClick() {
         double currentScale = graphPane.getScaleX();
-
         if (currentScale > 0.1) {
             double newScale = currentScale / 1.1;
             graphPane.setScaleX(newScale);
