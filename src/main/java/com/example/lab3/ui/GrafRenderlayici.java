@@ -1,20 +1,21 @@
 package com.example.lab3.ui;
 
 import com.example.lab3.models.MakaleDugumu;
+import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
+import javafx.scene.shape.Polygon;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
-import javafx.scene.control.Tooltip;
 import javafx.util.Duration;
-import javafx.geometry.Point2D;
 
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,7 @@ import java.util.function.Consumer;
 public class GrafRenderlayici {
 
     private static final double NODE_RADIUS = 25.0;
+    private static final double ARROW_SIZE = 6.0; // Ok ucunun boyutu
 
 
     public static void drawInteractiveGraph(Pane pane, Map<MakaleDugumu, Point2D> nodePositions, Consumer<MakaleDugumu> onNodeClick) {
@@ -34,6 +36,7 @@ public class GrafRenderlayici {
 
         Group group = new Group();
 
+
         for (Map.Entry<MakaleDugumu, Point2D> entry : nodePositions.entrySet()) {
             MakaleDugumu source = entry.getKey();
             Point2D p1 = entry.getValue();
@@ -42,14 +45,12 @@ public class GrafRenderlayici {
                 if (nodePositions.containsKey(target)) {
                     Point2D p2 = nodePositions.get(target);
 
-                    Line line = new Line(p1.getX(), p1.getY(), p2.getX(), p2.getY());
-                    line.setStroke(Color.GRAY);
-                    line.setStrokeWidth(1.0);
-                    group.getChildren().add(line);
+                    drawArrow(group, p1, p2, Color.GRAY, 1.0);
                 }
             }
         }
 
+        // 2. Düğümleri Çiz
         for (Map.Entry<MakaleDugumu, Point2D> entry : nodePositions.entrySet()) {
             MakaleDugumu node = entry.getKey();
             Point2D pos = entry.getValue();
@@ -68,6 +69,7 @@ public class GrafRenderlayici {
 
         Group group = new Group();
 
+
         for (Map.Entry<MakaleDugumu, Point2D> entry : nodePositions.entrySet()) {
             MakaleDugumu source = entry.getKey();
             Point2D p1 = entry.getValue();
@@ -75,21 +77,20 @@ public class GrafRenderlayici {
             for (MakaleDugumu target : source.getOutgoing()) {
                 if (nodePositions.containsKey(target)) {
                     Point2D p2 = nodePositions.get(target);
-                    Line line = new Line(p1.getX(), p1.getY(), p2.getX(), p2.getY());
 
                     boolean isHigh = highlightList.contains(source) && highlightList.contains(target);
                     if (isHigh) {
-                        line.setStroke(Color.RED);
-                        line.setStrokeWidth(3.0);
+                        // Vurgulu: Kırmızı ve Kalın Ok
+                        drawArrow(group, p1, p2, Color.RED, 3.0);
                     } else {
-                        line.setStroke(Color.LIGHTGRAY);
-                        line.setStrokeWidth(1.0);
+                        // Normal: Gri ve İnce Ok
+                        drawArrow(group, p1, p2, Color.LIGHTGRAY, 1.0);
                     }
-                    group.getChildren().add(line);
                 }
             }
         }
 
+        // 2. Düğümler
         for (Map.Entry<MakaleDugumu, Point2D> entry : nodePositions.entrySet()) {
             MakaleDugumu node = entry.getKey();
             Point2D pos = entry.getValue();
@@ -117,13 +118,9 @@ public class GrafRenderlayici {
             positions[i] = new Point2D(startX + i * stepX, centerY);
         }
 
+        // Turuncu Oklar
         for (int i = 0; i < n - 1; i++) {
-            Point2D p1 = positions[i];
-            Point2D p2 = positions[i+1];
-            Line line = new Line(p1.getX(), p1.getY(), p2.getX(), p2.getY());
-            line.setStroke(Color.ORANGE);
-            line.setStrokeWidth(3.0);
-            group.getChildren().add(line);
+            drawArrow(group, positions[i], positions[i+1], Color.ORANGE, 3.0);
         }
 
         for (int i = 0; i < n; i++) {
@@ -132,7 +129,6 @@ public class GrafRenderlayici {
         }
         pane.getChildren().add(group);
     }
-
 
     public static void drawGreenLineChain(Pane pane, List<MakaleDugumu> sortedNodes, Consumer<MakaleDugumu> onNodeClick) {
         pane.getChildren().clear();
@@ -149,7 +145,7 @@ public class GrafRenderlayici {
         for (int i = 0; i < sortedNodes.size(); i++) {
             int row = i / cols;
             int col = i % cols;
-            if (row % 2 == 1) col = (cols - 1) - col;
+            if (row % 2 == 1) col = (cols - 1) - col; // Zikzak düzen
 
             double x = startX + col * gapX;
             double y = startY + row * gapY;
@@ -159,6 +155,8 @@ public class GrafRenderlayici {
         for (int i = 0; i < sortedNodes.size() - 1; i++) {
             Point2D p1 = positions[i];
             Point2D p2 = positions[i+1];
+
+            // Yeşil zincirde genellikle kesikli çizgi şıktır, ok eklemek isterseniz burayı drawArrow yapın.
             Line line = new Line(p1.getX(), p1.getY(), p2.getX(), p2.getY());
             line.setStroke(Color.GREEN);
             line.setStrokeWidth(2.5);
@@ -179,9 +177,45 @@ public class GrafRenderlayici {
     }
 
 
+    private static void drawArrow(Group group, Point2D p1, Point2D p2, Color color, double width) {
+        double dx = p2.getX() - p1.getX();
+        double dy = p2.getY() - p1.getY();
+        double angle = Math.atan2(dy, dx);
+
+        double targetX = p2.getX() - NODE_RADIUS * Math.cos(angle);
+        double targetY = p2.getY() - NODE_RADIUS * Math.sin(angle);
+
+        double startX = p1.getX() + NODE_RADIUS * Math.cos(angle);
+        double startY = p1.getY() + NODE_RADIUS * Math.sin(angle);
+
+        Line line = new Line(startX, startY, targetX, targetY);
+        line.setStroke(color);
+        line.setStrokeWidth(width);
+
+        double arrowLen = 10.0 + width; // Çizgi kalınsa ok da büyüsün
+        double arrowWing = Math.PI / 6.0; // 30 derecelik kanat açısı
+
+        double x1 = targetX - arrowLen * Math.cos(angle - arrowWing);
+        double y1 = targetY - arrowLen * Math.sin(angle - arrowWing);
+        double x2 = targetX - arrowLen * Math.cos(angle + arrowWing);
+        double y2 = targetY - arrowLen * Math.sin(angle + arrowWing);
+
+        Polygon arrowHead = new Polygon();
+        arrowHead.getPoints().addAll(
+                targetX, targetY,
+                x1, y1,
+                x2, y2
+        );
+        arrowHead.setFill(color);
+        arrowHead.setStroke(color);
+        arrowHead.setStrokeWidth(1.0); // Uç kısmın kenarı ince olsun
+
+        group.getChildren().addAll(line, arrowHead);
+    }
+
+
     private static void drawNode(Group group, double x, double y, MakaleDugumu node, Color fill, Consumer<MakaleDugumu> onClick) {
         String citationCount = String.valueOf(node.getInDegree());
-
         String rawId = node.getArticle().getId();
         String displayId = rawId.contains("/") ? rawId.substring(rawId.lastIndexOf("/") + 1) : rawId;
         if (displayId.length() > 8) displayId = displayId.substring(0, 8) + "..";
@@ -236,7 +270,7 @@ public class GrafRenderlayici {
 
         Tooltip tooltip = new Tooltip(
                 "Başlık: " + node.getArticle().getTitle() + "\n" +
-                        "Yazarlar: " + fullAuthors + "\n" +  // <--- BURASI EKLENDİ
+                        "Yazarlar: " + fullAuthors + "\n" +
                         "ID: " + rawId + "\n" +
                         "Yıl: " + node.getArticle().getYear() + "\n" +
                         "Atıf (In): " + node.getInDegree() + "\n" +
