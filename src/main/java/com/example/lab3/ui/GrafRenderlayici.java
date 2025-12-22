@@ -50,7 +50,6 @@ public class GrafRenderlayici {
             }
         }
 
-        // 2. Düğümleri Çiz
         for (Map.Entry<MakaleDugumu, Point2D> entry : nodePositions.entrySet()) {
             MakaleDugumu node = entry.getKey();
             Point2D pos = entry.getValue();
@@ -90,7 +89,6 @@ public class GrafRenderlayici {
             }
         }
 
-        // 2. Düğümler
         for (Map.Entry<MakaleDugumu, Point2D> entry : nodePositions.entrySet()) {
             MakaleDugumu node = entry.getKey();
             Point2D pos = entry.getValue();
@@ -118,7 +116,6 @@ public class GrafRenderlayici {
             positions[i] = new Point2D(startX + i * stepX, centerY);
         }
 
-        // Turuncu Oklar
         for (int i = 0; i < n - 1; i++) {
             drawArrow(group, positions[i], positions[i+1], Color.ORANGE, 3.0);
         }
@@ -145,7 +142,7 @@ public class GrafRenderlayici {
         for (int i = 0; i < sortedNodes.size(); i++) {
             int row = i / cols;
             int col = i % cols;
-            if (row % 2 == 1) col = (cols - 1) - col; // Zikzak düzen
+            if (row % 2 == 1) col = (cols - 1) - col;
 
             double x = startX + col * gapX;
             double y = startY + row * gapY;
@@ -156,7 +153,6 @@ public class GrafRenderlayici {
             Point2D p1 = positions[i];
             Point2D p2 = positions[i+1];
 
-            // Yeşil zincirde genellikle kesikli çizgi şıktır, ok eklemek isterseniz burayı drawArrow yapın.
             Line line = new Line(p1.getX(), p1.getY(), p2.getX(), p2.getY());
             line.setStroke(Color.GREEN);
             line.setStrokeWidth(2.5);
@@ -192,8 +188,8 @@ public class GrafRenderlayici {
         line.setStroke(color);
         line.setStrokeWidth(width);
 
-        double arrowLen = 10.0 + width; // Çizgi kalınsa ok da büyüsün
-        double arrowWing = Math.PI / 6.0; // 30 derecelik kanat açısı
+        double arrowLen = 10.0 + width;
+        double arrowWing = Math.PI / 6.0;
 
         double x1 = targetX - arrowLen * Math.cos(angle - arrowWing);
         double y1 = targetY - arrowLen * Math.sin(angle - arrowWing);
@@ -208,7 +204,7 @@ public class GrafRenderlayici {
         );
         arrowHead.setFill(color);
         arrowHead.setStroke(color);
-        arrowHead.setStrokeWidth(1.0); // Uç kısmın kenarı ince olsun
+        arrowHead.setStrokeWidth(1.0);
 
         group.getChildren().addAll(line, arrowHead);
     }

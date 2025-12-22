@@ -1,9 +1,6 @@
 package com.example.lab3;
 
-import com.example.lab3.analysis.HIndexHesaplama;
-import com.example.lab3.analysis.HIndexSonuc;
-import com.example.lab3.analysis.KCoreHesaplama;
-import com.example.lab3.analysis.KisaYolBulma;
+import com.example.lab3.analysis.*;
 import com.example.lab3.jsonreader.JsonOkuyucu;
 import com.example.lab3.models.MakaleModeli;
 import com.example.lab3.models.MakaleGrafı;
@@ -22,14 +19,11 @@ import java.util.*;
 
 public class HelloController {
 
-    // JSON DOSYA YOLUNU KENDİ BİLGİSAYARINA GÖRE GÜNCELLEMEYİ UNUTMA
     private static final Path ARTICLES_JSON_PATH = Path.of(
             "C:/Users/dgknb/OneDrive/Desktop/Prolab3/makale-graf-uygulamasi/src/main/java/com/example/lab3/utlis/makale.json"
     );
 
     @FXML private TextArea outputArea;
-    @FXML private TextField pathStartField;
-    @FXML private TextField pathEndField;
     @FXML private TextField articleIdField;
     @FXML private TextField kInput;
     @FXML private Label errorLabel;
@@ -38,7 +32,6 @@ public class HelloController {
     private MakaleGrafı graph;
     private final Map<MakaleDugumu, Point2D> nodePositions = new HashMap<>();
 
-    // Rastgelelik için (Genişletme sırasında kullanılır)
     private final Random random = new Random();
 
     @FXML
@@ -147,10 +140,8 @@ public class HelloController {
         }
 
         try {
-            // 1. Hesapla
             HIndexSonuc result = HIndexHesaplama.computeForArticle(graph, id);
 
-            // 2. Bilgi Ver
             StringBuilder sb = new StringBuilder();
             sb.append("=== H-index Sonuçları ===\n");
             sb.append("Makale: ").append(centerNode.getArticle().getTitle()).append("\n");
@@ -161,16 +152,13 @@ public class HelloController {
 
             outputArea.setText(sb.toString());
 
-            // 3. Pozisyonları Sıfırla ve Çizim
             nodePositions.clear();
 
             double paneW = graphPane.getWidth() > 0 ? graphPane.getWidth() : 800;
             double paneH = graphPane.getHeight() > 0 ? graphPane.getHeight() : 600;
 
-            // Merkezi yerleştir
             nodePositions.put(centerNode, new Point2D(paneW / 2, paneH / 2));
 
-            // H-Core elemanlarını etrafa diz
             List<MakaleDugumu> hCore = result.getHCoreNodes();
             double radius = 150;
             for (int i = 0; i < hCore.size(); i++) {
@@ -218,9 +206,7 @@ public class HelloController {
         }
 
         if (anyNewAdded) {
-            // --- BURASI EKLENDİ: ÜST ÜSTE BİNMEYİ ENGELLE ---
             applyForceLayout();
-            // ------------------------------------------------
 
             redrawInteractive();
         } else {
@@ -232,49 +218,6 @@ public class HelloController {
         GrafRenderlayici.drawInteractiveGraph(graphPane, nodePositions, this::handleNodeClick);
     }
 
-    @FXML
-    protected void onFindShortestPathClick() {
-        clearError();
-        if (graph == null) {
-            showError("Lütfen önce JSON dosyasını yükleyin.");
-            return;
-        }
-
-        String startId = pathStartField.getText();
-        String endId = pathEndField.getText();
-
-        if (startId == null || startId.isBlank() || endId == null || endId.isBlank()) {
-            showError("Lütfen her iki ID alanını da doldurun.");
-            return;
-        }
-
-        startId = startId.trim();
-        endId = endId.trim();
-
-        try {
-            List<MakaleDugumu> path = KisaYolBulma.findShortestPath(graph, startId, endId);
-
-            if (path.isEmpty()) {
-                outputArea.setText("Sonuç: Bu iki makale arasında bir atıf zinciri (yol) BULUNAMADI.");
-                graphPane.getChildren().clear();
-            } else {
-                StringBuilder sb = new StringBuilder();
-                sb.append("=== En Kısa Yol Sonuçları ===\n");
-                sb.append("Adım Sayısı (Hop Count): ").append(path.size() - 1).append("\n");
-                sb.append("Yol:\n");
-                for (int i = 0; i < path.size(); i++) {
-                    sb.append(i + 1).append(". ").append(path.get(i).getArticle().getId()).append("\n");
-                }
-                outputArea.setText(sb.toString());
-
-                GrafRenderlayici.drawPathGraph(graphPane, path);
-            }
-
-        } catch (Exception e) {
-            showError("Yol bulma hatası: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
 
     @FXML
     protected void onShowGreenChainClick() {
@@ -309,6 +252,55 @@ public class HelloController {
     }
 
     @FXML
+    protected void onCalculateCentralityClick() {
+        outputArea.setText(""); // Temizle
+
+        String targetId = articleIdField.getText();
+        if (targetId == null || targetId.isBlank()) {
+            outputArea.setText("Hata: Lütfen bir makale ID girin veya graf üzerinden bir düğüme tıklayın.");
+            return;
+        }
+        targetId = targetId.trim();
+
+        MakaleDugumu targetNode = graph.getNode(targetId);
+        if (targetNode == null) {
+            outputArea.setText("Hata: Bu ID veritabanında bulunamadı.");
+            return;
+        }
+
+        if (nodePositions.isEmpty()) {
+            outputArea.setText("Hata: Önce ekrana bir graf çizdirin (H-Index veya Zincir ile).");
+            return;
+        }
+
+        if (!nodePositions.containsKey(targetNode)) {
+            outputArea.setText("Uyarı: Seçilen düğüm şu an ekranda görünmüyor.\nLütfen ekrandaki düğümlerden birini seçin.");
+            return;
+        }
+
+        try {
+            outputArea.appendText("=== Betweenness Centrality (Arasılık) ===\n");
+            outputArea.appendText("Hesaplanıyor... (Ekrandaki tüm ikililer taranıyor)\n");
+
+            List<MakaleDugumu> visibleNodes = new ArrayList<>(nodePositions.keySet());
+
+            int score = BetweenHesaplayici.computeCentrality(visibleNodes, targetNode);
+
+            outputArea.appendText("Hedef Makale: " + targetNode.getArticle().getTitle() + "\n");
+            outputArea.appendText("Analiz Edilen Düğüm Sayısı: " + visibleNodes.size() + "\n");
+            outputArea.appendText("----------------------------------\n");
+            outputArea.appendText("BETWEENNESS SKORU: " + score + "\n");
+            outputArea.appendText("----------------------------------\n");
+            outputArea.appendText("Anlamı: Ekrandaki diğer düğümler arasındaki en kısa yolların\n");
+            outputArea.appendText(score + " tanesi bu makalenin üzerinden geçiyor.\n");
+
+        } catch (Exception e) {
+            outputArea.setText("Hata: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
     protected void onZoomInClick() {
         double currentScale = graphPane.getScaleX();
         if (currentScale < 5.0) {
@@ -335,14 +327,13 @@ public class HelloController {
     }
 
     private void applyForceLayout() {
-        int iterations = 50; // Düzeltme döngüsü sayısı (Artarsa daha pürüzsüz olur)
-        double minDistance = 70.0; // İki düğüm arasındaki minimum mesafe (Yarıçaplar + Boşluk)
+        int iterations = 50;
+        double minDistance = 70.0;
         double width = graphPane.getWidth() > 0 ? graphPane.getWidth() : 800;
         double height = graphPane.getHeight() > 0 ? graphPane.getHeight() : 600;
-        double padding = 40.0; // Kenarlardan boşluk
+        double padding = 40.0;
 
         for (int i = 0; i < iterations; i++) {
-            // Tüm düğüm çiftlerini kontrol et
             List<MakaleDugumu> nodes = new ArrayList<>(nodePositions.keySet());
             for (int a = 0; a < nodes.size(); a++) {
                 for (int b = a + 1; b < nodes.size(); b++) {
@@ -354,22 +345,17 @@ public class HelloController {
 
                     double dist = p1.distance(p2);
 
-                    // Eğer çok yakınlarsa it
                     if (dist < minDistance) {
-                        // Mesafeyi en az 0.1 al ki bölme hatası olmasın
                         if (dist < 0.1) dist = 0.1;
 
                         double pushForce = (minDistance - dist) / 2.0; // Ne kadar itilecek?
 
-                        // İtme vektörü
                         double dx = (p1.getX() - p2.getX()) / dist;
                         double dy = (p1.getY() - p2.getY()) / dist;
 
-                        // P1'i it
                         double newX1 = p1.getX() + dx * pushForce;
                         double newY1 = p1.getY() + dy * pushForce;
 
-                        // P2'yi aksi yöne it
                         double newX2 = p2.getX() - dx * pushForce;
                         double newY2 = p2.getY() - dy * pushForce;
 
@@ -379,7 +365,6 @@ public class HelloController {
                 }
             }
 
-            // Ekran sınırları kontrolü (Dışarı kaçmasınlar)
             for (MakaleDugumu n : nodes) {
                 Point2D p = nodePositions.get(n);
                 double x = Math.max(padding, Math.min(width - padding, p.getX()));

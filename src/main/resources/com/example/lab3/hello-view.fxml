@@ -65,6 +65,7 @@
                 style="-fx-font-size: 11;"/>
     </HBox>
 
+
     <bottom>
         <VBox spacing="10">
             <padding>
@@ -97,10 +98,10 @@
             </HBox>
 
             <HBox spacing="10" alignment="CENTER_LEFT">
-                <Label text="En Kısa Yol:" style="-fx-font-weight: bold;"/>
-                <TextField fx:id="pathStartField" promptText="Başlangıç ID" prefWidth="150"/>
-                <TextField fx:id="pathEndField" promptText="Bitiş ID" prefWidth="150"/>
-                <Button text="Yolu Bul" onAction="#onFindShortestPathClick"/>
+                <Label text="Merkezilik Analizi:" style="-fx-font-weight: bold;"/>
+                <Button text="Seçili Düğümün Arasılığını Hesapla"
+                        onAction="#onCalculateCentralityClick"
+                        style="-fx-background-color: #e1bee7; -fx-border-color: #8e24aa;"/>
             </HBox>
 
             <Label fx:id="errorLabel" text=""
