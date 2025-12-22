@@ -188,64 +188,43 @@ public class HelloController {
         }
     }
 
-    // --- GÜNCELLENEN KISIM BURASI ---
-    // Tıklanan düğümün H-Index'ini hesaplar ve grafiği H-Core ile genişletir.
     private void handleNodeClick(MakaleDugumu clickedNode) {
         String newId = clickedNode.getArticle().getId();
-
-        // 1. ID Kutusunu güncelle
         articleIdField.setText(newId);
 
-        // 2. Tıklanan düğüm için H-Index Hesapla
         HIndexSonuc result = HIndexHesaplama.computeForArticle(graph, newId);
 
-        // 3. Sonuçları Ekrana Bas (Eskileri silmeden altına ekle)
         outputArea.appendText("\n\n----------------------------------\n");
-        outputArea.appendText("GENİŞLETİLEN MAKALE: " + clickedNode.getArticle().getTitle() + "\n");
-        outputArea.appendText("ID: " + newId + "\n");
+        outputArea.appendText("GENİŞLETİLEN: " + clickedNode.getArticle().getTitle() + "\n");
         outputArea.appendText("h-index: " + result.getHIndex() + "\n");
-        outputArea.appendText("h-median: " + result.getHMedian() + "\n");
-        outputArea.appendText("Yeni h-core bağlantıları eklendi (" + result.getHCoreNodes().size() + " adet).");
+        outputArea.appendText("Eklenen Bağlantı: " + result.getHCoreNodes().size() + "\n");
 
-        // 4. Yeni Düğümleri Haritaya Ekle
-        // Tıklanan düğümün etrafına, mevcut pozisyonu merkez alarak ekliyoruz.
         Point2D centerPos = nodePositions.get(clickedNode);
+        if (centerPos == null) centerPos = new Point2D(400, 300);
 
-        // Eğer düğüm bir şekilde haritada yoksa (hata durumu), ortaya al.
-        if (centerPos == null) {
-            centerPos = new Point2D(graphPane.getWidth() / 2, graphPane.getHeight() / 2);
-        }
-
-        double dist = 120.0; // Merkezden uzaklık
+        double dist = 100.0;
         boolean anyNewAdded = false;
 
         for (MakaleDugumu neighbor : result.getHCoreNodes()) {
-            // Eğer bu düğüm zaten ekranda varsa yerine dokunma
             if (!nodePositions.containsKey(neighbor)) {
-                // Rastgele bir açı ile etrafa dağıt
+                // İlk yerleştirme rastgele yapılır
                 double angle = random.nextDouble() * 2 * Math.PI;
-
                 double newX = centerPos.getX() + dist * Math.cos(angle);
                 double newY = centerPos.getY() + dist * Math.sin(angle);
-
-                // Ekran sınırlarına çarpmasın diye basit kontrol
-                double paneW = graphPane.getWidth() > 0 ? graphPane.getWidth() : 800;
-                double paneH = graphPane.getHeight() > 0 ? graphPane.getHeight() : 600;
-                newX = Math.max(40, Math.min(newX, paneW - 40));
-                newY = Math.max(40, Math.min(newY, paneH - 40));
 
                 nodePositions.put(neighbor, new Point2D(newX, newY));
                 anyNewAdded = true;
             }
         }
 
-        // 5. Grafiği Yeniden Çiz
         if (anyNewAdded) {
-            // İsterseniz burada force layout çağırabilirsiniz ama karışıklık olmaması için
-            // şimdilik sadece çizimi yeniliyoruz.
+            // --- BURASI EKLENDİ: ÜST ÜSTE BİNMEYİ ENGELLE ---
+            applyForceLayout();
+            // ------------------------------------------------
+
             redrawInteractive();
         } else {
-            outputArea.appendText("\n-> (Bu makalenin tüm H-Core bağlantıları zaten ekranda.)");
+            outputArea.appendText("-> (Bağlantılar zaten ekranda.)");
         }
     }
 
@@ -353,6 +332,61 @@ public class HelloController {
     protected void onResetZoomClick() {
         graphPane.setScaleX(1.0);
         graphPane.setScaleY(1.0);
+    }
+
+    private void applyForceLayout() {
+        int iterations = 50; // Düzeltme döngüsü sayısı (Artarsa daha pürüzsüz olur)
+        double minDistance = 70.0; // İki düğüm arasındaki minimum mesafe (Yarıçaplar + Boşluk)
+        double width = graphPane.getWidth() > 0 ? graphPane.getWidth() : 800;
+        double height = graphPane.getHeight() > 0 ? graphPane.getHeight() : 600;
+        double padding = 40.0; // Kenarlardan boşluk
+
+        for (int i = 0; i < iterations; i++) {
+            // Tüm düğüm çiftlerini kontrol et
+            List<MakaleDugumu> nodes = new ArrayList<>(nodePositions.keySet());
+            for (int a = 0; a < nodes.size(); a++) {
+                for (int b = a + 1; b < nodes.size(); b++) {
+                    MakaleDugumu n1 = nodes.get(a);
+                    MakaleDugumu n2 = nodes.get(b);
+
+                    Point2D p1 = nodePositions.get(n1);
+                    Point2D p2 = nodePositions.get(n2);
+
+                    double dist = p1.distance(p2);
+
+                    // Eğer çok yakınlarsa it
+                    if (dist < minDistance) {
+                        // Mesafeyi en az 0.1 al ki bölme hatası olmasın
+                        if (dist < 0.1) dist = 0.1;
+
+                        double pushForce = (minDistance - dist) / 2.0; // Ne kadar itilecek?
+
+                        // İtme vektörü
+                        double dx = (p1.getX() - p2.getX()) / dist;
+                        double dy = (p1.getY() - p2.getY()) / dist;
+
+                        // P1'i it
+                        double newX1 = p1.getX() + dx * pushForce;
+                        double newY1 = p1.getY() + dy * pushForce;
+
+                        // P2'yi aksi yöne it
+                        double newX2 = p2.getX() - dx * pushForce;
+                        double newY2 = p2.getY() - dy * pushForce;
+
+                        nodePositions.put(n1, new Point2D(newX1, newY1));
+                        nodePositions.put(n2, new Point2D(newX2, newY2));
+                    }
+                }
+            }
+
+            // Ekran sınırları kontrolü (Dışarı kaçmasınlar)
+            for (MakaleDugumu n : nodes) {
+                Point2D p = nodePositions.get(n);
+                double x = Math.max(padding, Math.min(width - padding, p.getX()));
+                double y = Math.max(padding, Math.min(height - padding, p.getY()));
+                nodePositions.put(n, new Point2D(x, y));
+            }
+        }
     }
 
     private void showError(String message) {
