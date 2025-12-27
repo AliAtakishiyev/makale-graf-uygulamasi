@@ -83,7 +83,7 @@ public class JsonOkuyucu {
             skipWhitespace();
 
             switch (key) {
-                case "id" -> id = parseString();
+                case "id" -> id = normalizeId(parseString());
                 case "doi" -> {
                     char valueStart = peek();
                     if (valueStart == 'n') { // null
@@ -95,7 +95,13 @@ public class JsonOkuyucu {
                 case "title" -> title = parseString();
                 case "year" -> year = parseIntNumber();
                 case "authors" -> authors = parseStringArray();
-                case "referenced_works" -> referencedWorks = parseStringArray();
+                case "referenced_works" -> {
+                    List<String> refs = parseStringArray();
+                    for (int i = 0; i < refs.size(); i++) {
+                        refs.set(i, normalizeId(refs.get(i)));
+                    }
+                    referencedWorks = refs;
+                }
                 default -> skipValue();
             }
 
@@ -293,6 +299,23 @@ public class JsonOkuyucu {
 
     private IllegalStateException error(String message) {
         return new IllegalStateException(message + " (index=" + index + ")");
+    }
+
+    /**
+     * OpenAlex ID'sini normalize eder.
+     * Tam link (https://openalex.org/W123456) formatından sadece ID kısmını (W123456) çıkarır.
+     * Zaten normalize edilmiş ID ise olduğu gibi döndürür.
+     */
+    private static String normalizeId(String id) {
+        if (id == null || id.isBlank()) {
+            return id;
+        }
+        id = id.trim();
+        // Eğer https://openalex.org/ ile başlıyorsa, son kısmını al
+        if (id.contains("/")) {
+            return id.substring(id.lastIndexOf("/") + 1);
+        }
+        return id;
     }
 }
 

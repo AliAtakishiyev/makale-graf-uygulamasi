@@ -20,7 +20,7 @@ import java.util.*;
 public class HelloController {
 
     private static final Path ARTICLES_JSON_PATH = Path.of(
-            "C:/Users/dgknb/OneDrive/Desktop/Prolab3/makale-graf-uygulamasi/src/main/java/com/example/lab3/utlis/makale.json"
+            "/Users/aliatakishiyev/Documents/KOU/lab/Lab3/src/main/java/com/example/lab3/utlis/makale.json"
     );
 
     @FXML private TextArea outputArea;
@@ -131,7 +131,7 @@ public class HelloController {
             return;
         }
 
-        id = id.trim();
+        id = normalizeId(id.trim());
         MakaleDugumu centerNode = graph.getNode(id);
 
         if (centerNode == null) {
@@ -260,7 +260,7 @@ public class HelloController {
             outputArea.setText("Hata: Lütfen bir makale ID girin veya graf üzerinden bir düğüme tıklayın.");
             return;
         }
-        targetId = targetId.trim();
+        targetId = normalizeId(targetId.trim());
 
         MakaleDugumu targetNode = graph.getNode(targetId);
         if (targetNode == null) {
@@ -380,5 +380,22 @@ public class HelloController {
 
     private void clearError() {
         errorLabel.setText("");
+    }
+
+    /**
+     * OpenAlex ID'sini normalize eder.
+     * Tam link (https://openalex.org/W123456) formatından sadece ID kısmını (W123456) çıkarır.
+     * Zaten normalize edilmiş ID ise olduğu gibi döndürür.
+     */
+    private static String normalizeId(String id) {
+        if (id == null || id.isBlank()) {
+            return id;
+        }
+        id = id.trim();
+        // Eğer https://openalex.org/ ile başlıyorsa, son kısmını al
+        if (id.contains("/")) {
+            return id.substring(id.lastIndexOf("/") + 1);
+        }
+        return id;
     }
 }
