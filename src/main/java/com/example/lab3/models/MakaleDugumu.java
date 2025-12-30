@@ -6,46 +6,55 @@ import java.util.List;
 
 public class MakaleDugumu {
 
-    private final MakaleModeli article;
-    private final List<MakaleDugumu> outgoing = new ArrayList<>();
-    private final List<MakaleDugumu> incoming = new ArrayList<>();
+    private final MakaleModeli makale;
+    private final List<MakaleDugumu> gidenler = new ArrayList<>();
+    private final List<MakaleDugumu> gelenler = new ArrayList<>();
 
-    public MakaleDugumu(MakaleModeli article) {
-        this.article = article;
+    public MakaleDugumu(MakaleModeli makale) {
+        this.makale = makale;
     }
 
-    public MakaleModeli getArticle() {
-        return article;
+    public MakaleModeli getMakale() {
+        return makale;
     }
 
-    public List<MakaleDugumu> getOutgoing() {
-        return Collections.unmodifiableList(outgoing);
+    public MakaleModeli getArticle() { return makale; }
+
+    public List<MakaleDugumu> getGidenler() {
+        return Collections.unmodifiableList(gidenler);
     }
 
-    public List<MakaleDugumu> getIncoming() {
-        return Collections.unmodifiableList(incoming);
+    public List<MakaleDugumu> getOutgoing() { return getGidenler(); }
+
+    public List<MakaleDugumu> getGelenler() {
+        return Collections.unmodifiableList(gelenler);
     }
 
-    void addOutgoing(MakaleDugumu target) {
-        if (!outgoing.contains(target)) {
-            outgoing.add(target);
+    public List<MakaleDugumu> getIncoming() { return getGelenler(); }
+
+    void gidenEkle(MakaleDugumu hedef) {
+        if (!gidenler.contains(hedef)) {
+            gidenler.add(hedef);
         }
     }
 
-    void addIncoming(MakaleDugumu source) {
-        if (!incoming.contains(source)) {
-            incoming.add(source);
+    void addOutgoing(MakaleDugumu target) { gidenEkle(target); }
+
+    void gelenEkle(MakaleDugumu kaynak) {
+        if (!gelenler.contains(kaynak)) {
+            gelenler.add(kaynak);
         }
     }
 
+    void addIncoming(MakaleDugumu source) { gelenEkle(source); }
 
-    public int getOutDegree() {
-        return outgoing.size();
+    public int getCikisDerecesi() {
+        return gidenler.size();
     }
+    public int getOutDegree() { return getCikisDerecesi(); }
 
-    public int getInDegree() {
-        return incoming.size();
+    public int getGirisDerecesi() {
+        return gelenler.size();
     }
+    public int getInDegree() { return getGirisDerecesi(); }
 }
-
-

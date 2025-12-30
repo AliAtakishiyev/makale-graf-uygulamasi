@@ -1,33 +1,29 @@
 package com.example.lab3.analysis;
 
 import com.example.lab3.models.MakaleDugumu;
-
 import java.util.List;
-
 
 public class HIndexSonuc {
 
-    private final int hIndex;
-    private final double hMedian;
-    private final List<MakaleDugumu> hCoreNodes;
+    private final int hIndeksi;
+    private final double hMedyan;
+    private final List<MakaleDugumu> hCekirdekDugumleri;
 
-    public HIndexSonuc(int hIndex, double hMedian, List<MakaleDugumu> hCoreNodes) {
-        this.hIndex = hIndex;
-        this.hMedian = hMedian;
-        this.hCoreNodes = hCoreNodes;
+    public HIndexSonuc(int hIndeksi, double hMedyan, List<MakaleDugumu> hCekirdekDugumleri) {
+        this.hIndeksi = hIndeksi;
+        this.hMedyan = hMedyan;
+        this.hCekirdekDugumleri = hCekirdekDugumleri;
     }
 
     public int getHIndex() {
-        return hIndex;
+        return hIndeksi;
     }
 
     public double getHMedian() {
-        return hMedian;
+        return hMedyan;
     }
 
     public List<MakaleDugumu> getHCoreNodes() {
-        return hCoreNodes;
+        return hCekirdekDugumleri;
     }
 }
-
-

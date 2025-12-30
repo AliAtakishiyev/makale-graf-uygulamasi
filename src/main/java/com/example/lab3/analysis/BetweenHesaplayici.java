@@ -4,73 +4,73 @@ import com.example.lab3.models.MakaleDugumu;
 import java.util.*;
 
 public class BetweenHesaplayici {
-    public static int computeCentrality(List<MakaleDugumu> visibleNodes, MakaleDugumu targetNode) {
-        int score = 0;
-        int n = visibleNodes.size();
+
+    public static int computeCentrality(List<MakaleDugumu> gorunurDugumler, MakaleDugumu hedefDugum) {
+        int skor = 0;
+        int n = gorunurDugumler.size();
 
         for (int i = 0; i < n; i++) {
             for (int j = i + 1; j < n; j++) {
-                MakaleDugumu startNode = visibleNodes.get(i);
-                MakaleDugumu endNode = visibleNodes.get(j);
+                MakaleDugumu baslangicDugumu = gorunurDugumler.get(i);
+                MakaleDugumu bitisDugumu = gorunurDugumler.get(j);
 
-                if (startNode.equals(targetNode) || endNode.equals(targetNode)) {
+
+                if (baslangicDugumu.equals(hedefDugum) || bitisDugumu.equals(hedefDugum)) {
                     continue;
                 }
 
-                List<MakaleDugumu> path = findUndirectedShortestPath(visibleNodes, startNode, endNode);
+                List<MakaleDugumu> yol = findUndirectedShortestPath(gorunurDugumler, baslangicDugumu, bitisDugumu);
 
-                if (!path.isEmpty() && path.contains(targetNode)) {
-                    score++;
+                if (!yol.isEmpty() && yol.contains(hedefDugum)) {
+                    skor++;
                 }
             }
         }
-        return score;
+        return skor;
     }
 
-    private static List<MakaleDugumu> findUndirectedShortestPath(List<MakaleDugumu> scope, MakaleDugumu start, MakaleDugumu end) {
-        if (start.equals(end)) return List.of(start);
+    private static List<MakaleDugumu> findUndirectedShortestPath(List<MakaleDugumu> kapsam, MakaleDugumu baslangic, MakaleDugumu bitis) {
+        if (baslangic.equals(bitis)) return List.of(baslangic);
 
-        Queue<MakaleDugumu> queue = new LinkedList<>();
-        Map<MakaleDugumu, MakaleDugumu> parentMap = new HashMap<>();
-        Set<MakaleDugumu> visited = new HashSet<>();
+        Queue<MakaleDugumu> kuyruk = new LinkedList<>();
+        Map<MakaleDugumu, MakaleDugumu> ebeveynHaritasi = new HashMap<>();
+        Set<MakaleDugumu> ziyaretEdilenler = new HashSet<>();
 
-        Set<MakaleDugumu> validNodes = new HashSet<>(scope);
+        Set<MakaleDugumu> gecerliDugumler = new HashSet<>(kapsam);
 
-        queue.add(start);
-        visited.add(start);
-        parentMap.put(start, null);
+        kuyruk.add(baslangic);
+        ziyaretEdilenler.add(baslangic);
+        ebeveynHaritasi.put(baslangic, null);
 
-        while (!queue.isEmpty()) {
-            MakaleDugumu current = queue.poll();
+        while (!kuyruk.isEmpty()) {
+            MakaleDugumu mevcut = kuyruk.poll();
 
-            if (current.equals(end)) {
-                return reconstructPath(parentMap, end);
+            if (mevcut.equals(bitis)) {
+                return yoluOlustur(ebeveynHaritasi, bitis);
             }
 
+            Set<MakaleDugumu> tumKomsular = new HashSet<>();
+            if (mevcut.getGidenler() != null) tumKomsular.addAll(mevcut.getGidenler());
+            if (mevcut.getGelenler() != null) tumKomsular.addAll(mevcut.getGelenler());
 
-            Set<MakaleDugumu> allNeighbors = new HashSet<>();
-            if (current.getOutgoing() != null) allNeighbors.addAll(current.getOutgoing());
-            if (current.getIncoming() != null) allNeighbors.addAll(current.getIncoming());
-
-            for (MakaleDugumu neighbor : allNeighbors) {
-
-                if (validNodes.contains(neighbor) && !visited.contains(neighbor)) {
-                    visited.add(neighbor);
-                    parentMap.put(neighbor, current);
-                    queue.add(neighbor);
+            for (MakaleDugumu komsu : tumKomsular) {
+                if (gecerliDugumler.contains(komsu) && !ziyaretEdilenler.contains(komsu)) {
+                    ziyaretEdilenler.add(komsu);
+                    ebeveynHaritasi.put(komsu, mevcut);
+                    kuyruk.add(komsu);
                 }
             }
         }
         return Collections.emptyList(); // Yol yok
     }
 
-    private static List<MakaleDugumu> reconstructPath(Map<MakaleDugumu, MakaleDugumu> parentMap, MakaleDugumu endNode) {
-        List<MakaleDugumu> path = new LinkedList<>();
-        MakaleDugumu curr = endNode;
-        while (curr != null) {
-            path.add(0, curr);
-            curr = parentMap.get(curr);
+    private static List<MakaleDugumu> yoluOlustur(Map<MakaleDugumu, MakaleDugumu> ebeveynHaritasi, MakaleDugumu bitisDugumu) {
+        List<MakaleDugumu> yol = new LinkedList<>();
+        MakaleDugumu mevcut = bitisDugumu;
+        while (mevcut != null) {
+            yol.add(0, mevcut);
+            mevcut = ebeveynHaritasi.get(mevcut);
         }
-        return path;
+        return yol;
     }
 }

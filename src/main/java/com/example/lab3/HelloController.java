@@ -19,99 +19,101 @@ import java.util.*;
 
 public class HelloController {
 
-    private static final Path ARTICLES_JSON_PATH = Path.of(
-            "/Users/aliatakishiyev/Documents/KOU/lab/Lab3/src/main/java/com/example/lab3/utlis/makale.json"
+    private static final Path MAKALELER_JSON_YOLU = Path.of(
+            "C:\\Users/dgknb/OneDrive/Desktop/ProLab3/makale-graf-uygulamasi/src/main/java/com/example/lab3/utlis/makale.json"
     );
 
-    @FXML private TextArea outputArea;
-    @FXML private TextField articleIdField;
-    @FXML private TextField kInput;
-    @FXML private Label errorLabel;
-    @FXML private Pane graphPane;
+    @FXML private TextArea ciktiAlani;
+    @FXML private TextField makaleIdAlani;
+    @FXML private TextField kGiris;
+    @FXML private Label hataEtiketi;
+    @FXML private Pane grafPaneli;
 
-    private MakaleGrafı graph;
-    private final Map<MakaleDugumu, Point2D> nodePositions = new HashMap<>();
+    private MakaleGrafı graf;
+    private final Map<MakaleDugumu, Point2D> dugumPozisyonlari = new HashMap<>();
 
-    private final Random random = new Random();
+    private final Random rastgele = new Random();
 
     @FXML
     protected void onLoadJsonClick() {
-        clearError();
+        hataTemizle();
         try {
-            List<MakaleModeli> articles = JsonOkuyucu.readArticles(ARTICLES_JSON_PATH);
-            this.graph = MakaleGrafı.buildFromArticles(articles);
+            List<MakaleModeli> makaleler = JsonOkuyucu.readArticles(MAKALELER_JSON_YOLU);
+            this.graf = MakaleGrafı.buildFromArticles(makaleler);
 
-            int nodeCount = graph.getNodeCount();
-            int edgeCount = graph.getEdgeCount();
-            MakaleGrafı.ArticleIdAndCount mostCited = graph.getMostCitedArticle();
-            MakaleGrafı.ArticleIdAndCount mostCiting = graph.getMostCitingArticle();
+            int dugumSayisi = graf.getDugumSayisi();
+            int kenarSayisi = graf.getKenarSayisi();
+
+            MakaleGrafı.MakaleIdVeSayisi enCokAtifAlan = graf.enCokAtifAlanMakale();
+            MakaleGrafı.MakaleIdVeSayisi enCokAtifVeren = graf.enCokAtifVerenMakale();
 
             StringBuilder sb = new StringBuilder();
-            sb.append("=== Genel Graf İstatistikleri ===\n");
-            sb.append("Toplam Makale: ").append(nodeCount).append("\n");
-            sb.append("Toplam Referans: ").append(edgeCount).append("\n");
+            sb.append("Genel Graf İstatistikleri\n");
+            sb.append("Toplam Makale: ").append(dugumSayisi).append("\n");
+            sb.append("Toplam Referans: ").append(kenarSayisi).append("\n");
 
-            if (mostCited != null) {
-                sb.append("En Çok Atıf Alan: ").append(mostCited.articleId())
-                        .append(" (").append(mostCited.count()).append(")\n");
+            if (enCokAtifAlan != null) {
+                sb.append("En Çok Atıf Alan: ").append(enCokAtifAlan.makaleId())
+                        .append(" (").append(enCokAtifAlan.sayi()).append(")\n");
             }
-            if (mostCiting != null) {
-                sb.append("En Çok Atıf Veren: ").append(mostCiting.articleId())
-                        .append(" (").append(mostCiting.count()).append(")\n");
+            if (enCokAtifVeren != null) {
+                sb.append("En Çok Atıf Veren: ").append(enCokAtifVeren.makaleId())
+                        .append(" (").append(enCokAtifVeren.sayi()).append(")\n");
             }
             sb.append("\nİşlem yapmak için ID veya K değeri giriniz.\n");
 
-            outputArea.setText(sb.toString());
-            graphPane.getChildren().clear();
-            nodePositions.clear();
+            ciktiAlani.setText(sb.toString());
+            grafPaneli.getChildren().clear();
+            dugumPozisyonlari.clear();
 
         } catch (IOException e) {
-            showError("JSON okuma hatası: " + e.getMessage());
+            hataGoster("JSON okuma hatası: " + e.getMessage());
             e.printStackTrace();
         } catch (Exception e) {
-            showError("Graf oluşturma hatası: " + e.getMessage());
+            hataGoster("Graf oluşturma hatası: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
+
     @FXML
     protected void onLocalKCoreClick() {
-        outputArea.setText("");
+        ciktiAlani.setText("");
 
-        if (nodePositions.isEmpty()) {
-            outputArea.setText("Hata: Ekranda bir graf yok.");
+        if (dugumPozisyonlari.isEmpty()) {
+            ciktiAlani.setText("Hata: Ekranda bir graf yok.");
             return;
         }
 
         try {
-            if (kInput == null || kInput.getText().isBlank()) {
-                outputArea.setText("Hata: Lütfen bir k değeri girin.");
+            if (kGiris == null || kGiris.getText().isBlank()) {
+                ciktiAlani.setText("Hata: Lütfen bir k değeri girin.");
                 return;
             }
-            int k = Integer.parseInt(kInput.getText().trim());
+            int k = Integer.parseInt(kGiris.getText().trim());
 
-            List<MakaleDugumu> visibleNodes = new ArrayList<>(nodePositions.keySet());
-            List<MakaleDugumu> survivors = KCoreHesaplama.computeLocalKCore(visibleNodes, k);
+            List<MakaleDugumu> gorunurDugumler = new ArrayList<>(dugumPozisyonlari.keySet());
+            List<MakaleDugumu> kalanlar = KCoreHesaplama.computeLocalKCore(gorunurDugumler, k);
 
-            outputArea.setText("=== Yerel K-Core Analizi ===\n");
-            outputArea.appendText("Analiz edilen düğüm: " + visibleNodes.size() + "\n");
-            outputArea.appendText("K=" + k + " çekirdeğindeki düğüm: " + survivors.size() + "\n");
+            ciktiAlani.setText("Yerel K-Core Analizi\n");
+            ciktiAlani.appendText("Analiz edilen düğüm: " + gorunurDugumler.size() + "\n");
+            ciktiAlani.appendText("K=" + k + " çekirdeğindeki düğüm: " + kalanlar.size() + "\n");
 
-            if (survivors.isEmpty()) {
-                outputArea.appendText("Sonuç: Bu kriteri sağlayan hiçbir düğüm yok.\n");
+            if (kalanlar.isEmpty()) {
+                ciktiAlani.appendText("Sonuç: Bu kriteri sağlayan hiçbir düğüm yok.\n");
             } else {
-                outputArea.appendText("Sonuç: K-Core üyeleri KIRMIZI, elenenler GRİ renkle gösterildi.\n");
+                ciktiAlani.appendText("Sonuç: K-Core üyeleri KIRMIZI, elenenler GRİ renkle gösterildi.\n");
             }
 
             GrafRenderlayici.drawInteractiveGraphWithHighlight(
-                    graphPane,
-                    nodePositions,
-                    survivors,
-                    this::handleNodeClick
+                    grafPaneli,
+                    dugumPozisyonlari,
+                    kalanlar,
+                    this::dugumTiklamaIslemi
             );
 
         } catch (NumberFormatException e) {
-            outputArea.setText("Hata: Geçersiz sayı.");
+            ciktiAlani.setText("Hata: Geçersiz sayı.");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -119,280 +121,268 @@ public class HelloController {
 
     @FXML
     protected void onComputeHIndexClick() {
-        clearError();
-        if (graph == null) {
-            showError("Lütfen önce JSON'u yükleyin.");
+        hataTemizle();
+        if (graf == null) {
+            hataGoster("Lütfen önce JSON'u yükleyin.");
             return;
         }
 
-        String id = articleIdField.getText();
+        String id = makaleIdAlani.getText();
         if (id == null || id.isBlank()) {
-            showError("Lütfen geçerli bir makale ID girin.");
+            hataGoster("Lütfen geçerli bir makale ID girin.");
             return;
         }
 
-        id = normalizeId(id.trim());
-        MakaleDugumu centerNode = graph.getNode(id);
+        id = idNormalizeEt(id.trim());
+        MakaleDugumu merkezDugum = graf.getDugum(id);
 
-        if (centerNode == null) {
-            showError("'" + id + "' ID'li makale bulunamadı.");
+        if (merkezDugum == null) {
+            hataGoster("'" + id + "' ID'li makale bulunamadı.");
             return;
         }
 
         try {
-            HIndexSonuc result = HIndexHesaplama.computeForArticle(graph, id);
+            HIndexSonuc sonuc = HIndexHesaplama.computeForArticle(graf, id);
 
             StringBuilder sb = new StringBuilder();
-            sb.append("=== H-index Sonuçları ===\n");
-            sb.append("Makale: ").append(centerNode.getArticle().getTitle()).append("\n");
-            sb.append("h-index: ").append(result.getHIndex()).append("\n");
-            sb.append("h-median: ").append(result.getHMedian()).append("\n");
-            sb.append("h-core sayısı: ").append(result.getHCoreNodes().size()).append("\n");
-            sb.append("\n[BİLGİ] Düğümlere tıklayarak grafiği genişletebilirsiniz (H-Core eklenir).");
+            sb.append("H-index Sonuçları\n");
+            sb.append("Makale: ").append(merkezDugum.getMakale().getBaslik()).append("\n");
+            sb.append("h-index: ").append(sonuc.getHIndex()).append("\n");
+            sb.append("h-median: ").append(sonuc.getHMedian()).append("\n");
+            sb.append("h-core sayısı: ").append(sonuc.getHCoreNodes().size()).append("\n");
 
-            outputArea.setText(sb.toString());
+            ciktiAlani.setText(sb.toString());
 
-            nodePositions.clear();
+            dugumPozisyonlari.clear();
 
-            double paneW = graphPane.getWidth() > 0 ? graphPane.getWidth() : 800;
-            double paneH = graphPane.getHeight() > 0 ? graphPane.getHeight() : 600;
+            double panelG = grafPaneli.getWidth() > 0 ? grafPaneli.getWidth() : 800;
+            double panelY = grafPaneli.getHeight() > 0 ? grafPaneli.getHeight() : 600;
 
-            nodePositions.put(centerNode, new Point2D(paneW / 2, paneH / 2));
+            dugumPozisyonlari.put(merkezDugum, new Point2D(panelG / 2, panelY / 2));
 
-            List<MakaleDugumu> hCore = result.getHCoreNodes();
-            double radius = 150;
-            for (int i = 0; i < hCore.size(); i++) {
-                double angle = 2 * Math.PI * i / hCore.size();
-                double x = (paneW / 2) + radius * Math.cos(angle);
-                double y = (paneH / 2) + radius * Math.sin(angle);
-                nodePositions.put(hCore.get(i), new Point2D(x, y));
+            List<MakaleDugumu> hCekirdegi = sonuc.getHCoreNodes();
+            double yaricap = 150;
+            for (int i = 0; i < hCekirdegi.size(); i++) {
+                double aci = 2 * Math.PI * i / hCekirdegi.size();
+                double x = (panelG / 2) + yaricap * Math.cos(aci);
+                double y = (panelY / 2) + yaricap * Math.sin(aci);
+                dugumPozisyonlari.put(hCekirdegi.get(i), new Point2D(x, y));
             }
 
-            redrawInteractive();
+            grafigiYenidenCiz();
 
         } catch (Exception ex) {
-            showError("Hata: " + ex.getMessage());
+            hataGoster("Hata: " + ex.getMessage());
             ex.printStackTrace();
         }
     }
 
-    private void handleNodeClick(MakaleDugumu clickedNode) {
-        String newId = clickedNode.getArticle().getId();
-        articleIdField.setText(newId);
+    private void dugumTiklamaIslemi(MakaleDugumu tiklananDugum) {
+        String yeniId = tiklananDugum.getMakale().getId();
+        makaleIdAlani.setText(yeniId);
 
-        HIndexSonuc result = HIndexHesaplama.computeForArticle(graph, newId);
+        HIndexSonuc sonuc = HIndexHesaplama.computeForArticle(graf, yeniId);
 
-        outputArea.appendText("\n\n----------------------------------\n");
-        outputArea.appendText("GENİŞLETİLEN: " + clickedNode.getArticle().getTitle() + "\n");
-        outputArea.appendText("h-index: " + result.getHIndex() + "\n");
-        outputArea.appendText("Eklenen Bağlantı: " + result.getHCoreNodes().size() + "\n");
+        ciktiAlani.appendText("\n\n----------------------------------\n");
+        ciktiAlani.appendText("GENİŞLETİLEN: " + tiklananDugum.getMakale().getBaslik() + "\n");
+        ciktiAlani.appendText("h-index: " + sonuc.getHIndex() + "\n");
+        ciktiAlani.appendText("Eklenen Bağlantı: " + sonuc.getHCoreNodes().size() + "\n");
 
-        Point2D centerPos = nodePositions.get(clickedNode);
-        if (centerPos == null) centerPos = new Point2D(400, 300);
+        Point2D merkezPoz = dugumPozisyonlari.get(tiklananDugum);
+        if (merkezPoz == null) merkezPoz = new Point2D(400, 300);
 
-        double dist = 100.0;
-        boolean anyNewAdded = false;
+        double mesafe = 100.0;
+        boolean yeniEklendiMi = false;
 
-        for (MakaleDugumu neighbor : result.getHCoreNodes()) {
-            if (!nodePositions.containsKey(neighbor)) {
-                // İlk yerleştirme rastgele yapılır
-                double angle = random.nextDouble() * 2 * Math.PI;
-                double newX = centerPos.getX() + dist * Math.cos(angle);
-                double newY = centerPos.getY() + dist * Math.sin(angle);
+        for (MakaleDugumu komsu : sonuc.getHCoreNodes()) {
+            if (!dugumPozisyonlari.containsKey(komsu)) {
+                double aci = rastgele.nextDouble() * 2 * Math.PI;
+                double yeniX = merkezPoz.getX() + mesafe * Math.cos(aci);
+                double yeniY = merkezPoz.getY() + mesafe * Math.sin(aci);
 
-                nodePositions.put(neighbor, new Point2D(newX, newY));
-                anyNewAdded = true;
+                dugumPozisyonlari.put(komsu, new Point2D(yeniX, yeniY));
+                yeniEklendiMi = true;
             }
         }
 
-        if (anyNewAdded) {
-            applyForceLayout();
-
-            redrawInteractive();
+        if (yeniEklendiMi) {
+            kuvvetDuzeniniUygula();
+            grafigiYenidenCiz();
         } else {
-            outputArea.appendText("-> (Bağlantılar zaten ekranda.)");
+            ciktiAlani.appendText("Bağlantılar zaten ekranda.");
         }
     }
 
-    private void redrawInteractive() {
-        GrafRenderlayici.drawInteractiveGraph(graphPane, nodePositions, this::handleNodeClick);
+    private void grafigiYenidenCiz() {
+        GrafRenderlayici.drawInteractiveGraph(grafPaneli, dugumPozisyonlari, this::dugumTiklamaIslemi);
     }
-
 
     @FXML
     protected void onShowGreenChainClick() {
-        clearError();
-        if (graph == null) {
-            showError("Lütfen önce JSON dosyasını yükleyin.");
+        hataTemizle();
+        if (graf == null) {
+            hataGoster("Lütfen önce JSON dosyasını yükleyin.");
             return;
         }
 
         try {
-            List<MakaleDugumu> allNodes = new java.util.ArrayList<>(graph.getAllNodes());
-            allNodes.sort((n1, n2) -> n1.getArticle().getId().compareTo(n2.getArticle().getId()));
+            List<MakaleDugumu> tumDugumler = new ArrayList<>(graf.tumDugumleriGetir());
+            tumDugumler.sort((n1, n2) -> n1.getMakale().getId().compareTo(n2.getMakale().getId()));
 
-            int limit = Math.min(allNodes.size(), 100);
-            List<MakaleDugumu> sortedList = allNodes.subList(0, limit);
+            int limit = Math.min(tumDugumler.size(), 100);
+            List<MakaleDugumu> siraliListe = tumDugumler.subList(0, limit);
 
-            outputArea.setText("=== ID Sıralı Zincir (Yeşil Hat) ===\n");
-            outputArea.appendText("Görüntülenen: " + sortedList.size() + " makale.\n");
-            outputArea.appendText("İPUCU: Zincirdeki bir makaleye tıklayarak H-Index analizine gidebilirsiniz.");
+            ciktiAlani.setText("ID Sıralı Zincir (Yeşil Hat)\n");
+            ciktiAlani.appendText("Görüntülenen: " + siraliListe.size() + " makale.\n");
 
-            GrafRenderlayici.drawGreenLineChain(graphPane, sortedList, this::handleChainNodeClick);
+            GrafRenderlayici.drawGreenLineChain(grafPaneli, siraliListe, this::zincirDugumTiklama);
 
         } catch (Exception e) {
-            showError("Hata: " + e.getMessage());
+            hataGoster("Hata: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
-    private void handleChainNodeClick(MakaleDugumu node) {
-        articleIdField.setText(node.getArticle().getId());
+    private void zincirDugumTiklama(MakaleDugumu dugum) {
+        makaleIdAlani.setText(dugum.getMakale().getId());
         onComputeHIndexClick();
     }
 
     @FXML
     protected void onCalculateCentralityClick() {
-        outputArea.setText(""); // Temizle
+        ciktiAlani.setText("");
 
-        String targetId = articleIdField.getText();
-        if (targetId == null || targetId.isBlank()) {
-            outputArea.setText("Hata: Lütfen bir makale ID girin veya graf üzerinden bir düğüme tıklayın.");
+        String hedefId = makaleIdAlani.getText();
+        if (hedefId == null || hedefId.isBlank()) {
+            ciktiAlani.setText("Hata: Lütfen bir makale ID girin veya graf üzerinden bir düğüme tıklayın.");
             return;
         }
-        targetId = normalizeId(targetId.trim());
+        hedefId = idNormalizeEt(hedefId.trim());
 
-        MakaleDugumu targetNode = graph.getNode(targetId);
-        if (targetNode == null) {
-            outputArea.setText("Hata: Bu ID veritabanında bulunamadı.");
-            return;
-        }
-
-        if (nodePositions.isEmpty()) {
-            outputArea.setText("Hata: Önce ekrana bir graf çizdirin (H-Index veya Zincir ile).");
+        MakaleDugumu hedefDugum = graf.getDugum(hedefId);
+        if (hedefDugum == null) {
+            ciktiAlani.setText("Hata: Bu ID veritabanında bulunamadı.");
             return;
         }
 
-        if (!nodePositions.containsKey(targetNode)) {
-            outputArea.setText("Uyarı: Seçilen düğüm şu an ekranda görünmüyor.\nLütfen ekrandaki düğümlerden birini seçin.");
+        if (dugumPozisyonlari.isEmpty()) {
+            ciktiAlani.setText("Hata: Önce ekrana bir graf çizdirin (H-Index veya Zincir ile).");
+            return;
+        }
+
+        if (!dugumPozisyonlari.containsKey(hedefDugum)) {
+            ciktiAlani.setText("Seçilen düğüm şu an ekranda görünmüyor.\nLütfen ekrandaki düğümlerden birini seçin.");
             return;
         }
 
         try {
-            outputArea.appendText("=== Betweenness Centrality (Arasılık) ===\n");
-            outputArea.appendText("Hesaplanıyor... (Ekrandaki tüm ikililer taranıyor)\n");
+            ciktiAlani.appendText("Betweenness Centrality\n");
+            ciktiAlani.appendText("Hesaplanıyor... (Ekrandaki tüm ikililer taranıyor)\n");
 
-            List<MakaleDugumu> visibleNodes = new ArrayList<>(nodePositions.keySet());
+            List<MakaleDugumu> gorunurDugumler = new ArrayList<>(dugumPozisyonlari.keySet());
 
-            int score = BetweenHesaplayici.computeCentrality(visibleNodes, targetNode);
+            int skor = BetweenHesaplayici.computeCentrality(gorunurDugumler, hedefDugum);
 
-            outputArea.appendText("Hedef Makale: " + targetNode.getArticle().getTitle() + "\n");
-            outputArea.appendText("Analiz Edilen Düğüm Sayısı: " + visibleNodes.size() + "\n");
-            outputArea.appendText("----------------------------------\n");
-            outputArea.appendText("BETWEENNESS SKORU: " + score + "\n");
-            outputArea.appendText("----------------------------------\n");
-            outputArea.appendText("Anlamı: Ekrandaki diğer düğümler arasındaki en kısa yolların\n");
-            outputArea.appendText(score + " tanesi bu makalenin üzerinden geçiyor.\n");
+            ciktiAlani.appendText("Hedef Makale: " + hedefDugum.getMakale().getBaslik() + "\n");
+            ciktiAlani.appendText("Analiz Edilen Düğüm Sayısı: " + gorunurDugumler.size() + "\n");
+            ciktiAlani.appendText("----------------------------------\n");
+            ciktiAlani.appendText("BETWEENNESS SKORU: " + skor + "\n");
+            ciktiAlani.appendText("----------------------------------\n");
+            ciktiAlani.appendText(skor + " tanesi bu makalenin üzerinden geçiyor.\n");
 
         } catch (Exception e) {
-            outputArea.setText("Hata: " + e.getMessage());
+            ciktiAlani.setText("Hata: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
     @FXML
     protected void onZoomInClick() {
-        double currentScale = graphPane.getScaleX();
-        if (currentScale < 5.0) {
-            double newScale = currentScale * 1.1;
-            graphPane.setScaleX(newScale);
-            graphPane.setScaleY(newScale);
+        double mevcutOlcek = grafPaneli.getScaleX();
+        if (mevcutOlcek < 5.0) {
+            double yeniOlcek = mevcutOlcek * 1.1;
+            grafPaneli.setScaleX(yeniOlcek);
+            grafPaneli.setScaleY(yeniOlcek);
         }
     }
 
     @FXML
     protected void onZoomOutClick() {
-        double currentScale = graphPane.getScaleX();
-        if (currentScale > 0.1) {
-            double newScale = currentScale / 1.1;
-            graphPane.setScaleX(newScale);
-            graphPane.setScaleY(newScale);
+        double mevcutOlcek = grafPaneli.getScaleX();
+        if (mevcutOlcek > 0.1) {
+            double yeniOlcek = mevcutOlcek / 1.1;
+            grafPaneli.setScaleX(yeniOlcek);
+            grafPaneli.setScaleY(yeniOlcek);
         }
     }
 
     @FXML
     protected void onResetZoomClick() {
-        graphPane.setScaleX(1.0);
-        graphPane.setScaleY(1.0);
+        grafPaneli.setScaleX(1.0);
+        grafPaneli.setScaleY(1.0);
     }
 
-    private void applyForceLayout() {
-        int iterations = 50;
-        double minDistance = 70.0;
-        double width = graphPane.getWidth() > 0 ? graphPane.getWidth() : 800;
-        double height = graphPane.getHeight() > 0 ? graphPane.getHeight() : 600;
-        double padding = 40.0;
+    private void kuvvetDuzeniniUygula() {
+        int iterasyonlar = 50;
+        double minMesafe = 70.0;
+        double genislik = grafPaneli.getWidth() > 0 ? grafPaneli.getWidth() : 800;
+        double yukseklik = grafPaneli.getHeight() > 0 ? grafPaneli.getHeight() : 600;
+        double dolgu = 40.0;
 
-        for (int i = 0; i < iterations; i++) {
-            List<MakaleDugumu> nodes = new ArrayList<>(nodePositions.keySet());
-            for (int a = 0; a < nodes.size(); a++) {
-                for (int b = a + 1; b < nodes.size(); b++) {
-                    MakaleDugumu n1 = nodes.get(a);
-                    MakaleDugumu n2 = nodes.get(b);
+        for (int i = 0; i < iterasyonlar; i++) {
+            List<MakaleDugumu> dugumler = new ArrayList<>(dugumPozisyonlari.keySet());
+            for (int a = 0; a < dugumler.size(); a++) {
+                for (int b = a + 1; b < dugumler.size(); b++) {
+                    MakaleDugumu n1 = dugumler.get(a);
+                    MakaleDugumu n2 = dugumler.get(b);
 
-                    Point2D p1 = nodePositions.get(n1);
-                    Point2D p2 = nodePositions.get(n2);
+                    Point2D p1 = dugumPozisyonlari.get(n1);
+                    Point2D p2 = dugumPozisyonlari.get(n2);
 
-                    double dist = p1.distance(p2);
+                    double mesafe = p1.distance(p2);
 
-                    if (dist < minDistance) {
-                        if (dist < 0.1) dist = 0.1;
+                    if (mesafe < minMesafe) {
+                        if (mesafe < 0.1) mesafe = 0.1;
 
-                        double pushForce = (minDistance - dist) / 2.0; // Ne kadar itilecek?
+                        double itmeKuvveti = (minMesafe - mesafe) / 2.0;
 
-                        double dx = (p1.getX() - p2.getX()) / dist;
-                        double dy = (p1.getY() - p2.getY()) / dist;
+                        double dx = (p1.getX() - p2.getX()) / mesafe;
+                        double dy = (p1.getY() - p2.getY()) / mesafe;
 
-                        double newX1 = p1.getX() + dx * pushForce;
-                        double newY1 = p1.getY() + dy * pushForce;
+                        double yeniX1 = p1.getX() + dx * itmeKuvveti;
+                        double yeniY1 = p1.getY() + dy * itmeKuvveti;
 
-                        double newX2 = p2.getX() - dx * pushForce;
-                        double newY2 = p2.getY() - dy * pushForce;
+                        double yeniX2 = p2.getX() - dx * itmeKuvveti;
+                        double yeniY2 = p2.getY() - dy * itmeKuvveti;
 
-                        nodePositions.put(n1, new Point2D(newX1, newY1));
-                        nodePositions.put(n2, new Point2D(newX2, newY2));
+                        dugumPozisyonlari.put(n1, new Point2D(yeniX1, yeniY1));
+                        dugumPozisyonlari.put(n2, new Point2D(yeniX2, yeniY2));
                     }
                 }
             }
 
-            for (MakaleDugumu n : nodes) {
-                Point2D p = nodePositions.get(n);
-                double x = Math.max(padding, Math.min(width - padding, p.getX()));
-                double y = Math.max(padding, Math.min(height - padding, p.getY()));
-                nodePositions.put(n, new Point2D(x, y));
+            for (MakaleDugumu n : dugumler) {
+                Point2D p = dugumPozisyonlari.get(n);
+                double x = Math.max(dolgu, Math.min(genislik - dolgu, p.getX()));
+                double y = Math.max(dolgu, Math.min(yukseklik - dolgu, p.getY()));
+                dugumPozisyonlari.put(n, new Point2D(x, y));
             }
         }
     }
 
-    private void showError(String message) {
-        errorLabel.setText(message);
+    private void hataGoster(String mesaj) {
+        hataEtiketi.setText(mesaj);
     }
 
-    private void clearError() {
-        errorLabel.setText("");
+    private void hataTemizle() {
+        hataEtiketi.setText("");
     }
 
-    /**
-     * OpenAlex ID'sini normalize eder.
-     * Tam link (https://openalex.org/W123456) formatından sadece ID kısmını (W123456) çıkarır.
-     * Zaten normalize edilmiş ID ise olduğu gibi döndürür.
-     */
-    private static String normalizeId(String id) {
+    private static String idNormalizeEt(String id) {
         if (id == null || id.isBlank()) {
             return id;
         }
         id = id.trim();
-        // Eğer https://openalex.org/ ile başlıyorsa, son kısmını al
         if (id.contains("/")) {
             return id.substring(id.lastIndexOf("/") + 1);
         }

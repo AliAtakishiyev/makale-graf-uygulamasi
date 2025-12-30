@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.VBox?>
 <?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.VBox?>
 
-<?import javafx.scene.control.ScrollPane?>
-<BorderPane xmlns:fx="http://javafx.com/fxml"
+<BorderPane xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/21"
             fx:controller="com.example.lab3.HelloController">
 
     <top>
         <HBox spacing="10">
             <padding>
-                <Insets top="10" right="10" bottom="10" left="10"/>
+                <Insets bottom="10" left="10" right="10" top="10"/>
             </padding>
             <Label text="Makale Graf Analiz Uygulaması"
                    style="-fx-font-size: 20; -fx-font-weight: bold;"/>
@@ -27,86 +27,80 @@
     <center>
         <HBox spacing="10">
             <padding>
-                <Insets top="10" right="10" bottom="10" left="10"/>
+                <Insets bottom="10" left="10" right="10" top="10"/>
             </padding>
 
-            <TextArea fx:id="outputArea"
+            <TextArea fx:id="ciktiAlani"
                       editable="false"
-                      wrapText="true"
+                      minWidth="350"
                       prefWidth="350"
+                      maxWidth="450"
+                      wrapText="true"
                       style="-fx-font-family: 'Consolas'; -fx-font-size: 13;"/>
 
-            <ScrollPane HBox.hgrow="ALWAYS" pannable="true"
-                        style="-fx-background-color: transparent;">
+            <ScrollPane pannable="true" style="-fx-background-color: transparent;" HBox.hgrow="ALWAYS">
                 <content>
-                    <Pane fx:id="graphPane"
-                          prefWidth="800" prefHeight="600"
+                    <Pane fx:id="grafPaneli"
+                          prefHeight="2000.0" prefWidth="2000.0"
                           style="-fx-background-color: #f5f5f5;"/>
                 </content>
             </ScrollPane>
         </HBox>
     </center>
 
-    <HBox spacing="10" alignment="CENTER_LEFT">
-        <Label text="Görünüm (Zoom):" style="-fx-font-weight: bold;"/>
-
-        <Button text="+"
-                onAction="#onZoomInClick"
-                prefWidth="40"
-                style="-fx-font-weight: bold; -fx-font-size: 14;"/>
-
-        <Button text="-"
-                onAction="#onZoomOutClick"
-                prefWidth="40"
-                style="-fx-font-weight: bold; -fx-font-size: 14;"/>
-
-        <Button text="Sıfırla"
-                onAction="#onResetZoomClick"
-                style="-fx-font-size: 11;"/>
-    </HBox>
-
-
     <bottom>
         <VBox spacing="10">
             <padding>
-                <Insets top="10" right="10" bottom="10" left="10"/>
+                <Insets bottom="10" left="10" right="10" top="10"/>
             </padding>
 
-            <HBox spacing="10" alignment="CENTER_LEFT">
-                <Button text="JSON'u Yükle ve İstatistikleri Göster"
-                        onAction="#onLoadJsonClick"/>
-                <TextField fx:id="articleIdField" prefWidth="300"
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label style="-fx-font-weight: bold;" text="Görünüm (Zoom):"/>
+
+                <Button onAction="#onZoomInClick" prefWidth="40"
+                        style="-fx-font-weight: bold; -fx-font-size: 14;" text="+"/>
+
+                <Button onAction="#onZoomOutClick" prefWidth="40"
+                        style="-fx-font-weight: bold; -fx-font-size: 14;" text="-"/>
+
+                <Button onAction="#onResetZoomClick" style="-fx-font-size: 11;" text="Sıfırla"/>
+            </HBox>
+
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Button onAction="#onLoadJsonClick" text="JSON'u Yükle ve İstatistikleri Göster"/>
+
+                <TextField fx:id="makaleIdAlani" prefWidth="300"
                            promptText="H-index için makale ID girin"/>
-                <Button text="H-index Hesapla"
-                        onAction="#onComputeHIndexClick"/>
+
+                <Button onAction="#onComputeHIndexClick" text="H-index Hesapla"/>
             </HBox>
 
-            <HBox spacing="10" alignment="CENTER_LEFT">
-                <Label text="K-Core Analizi:" style="-fx-font-weight: bold;"/>
-                <TextField fx:id="kInput" promptText="k değeri" prefWidth="80"/>
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label style="-fx-font-weight: bold;" text="K-Core Analizi:"/>
 
-                <Button text="K-Core Uygula (Ekranda)"
-                        onAction="#onLocalKCoreClick"
-                        style="-fx-background-color: #ffe0b2; -fx-border-color: #ff9800;"/>
+                <TextField fx:id="kGiris" prefWidth="80" promptText="k değeri"/>
+
+                <Button onAction="#onLocalKCoreClick"
+                        style="-fx-background-color: #ffe0b2; -fx-border-color: #ff9800;"
+                        text="K-Core Uygula (Ekranda)"/>
             </HBox>
 
-            <HBox spacing="10" alignment="CENTER_LEFT">
-                <Label text="Ekstra Görünüm:" style="-fx-font-weight: bold;"/>
-                <Button text="ID Sıralı Zinciri Göster (Yeşil Hat)"
-                        onAction="#onShowGreenChainClick"
-                        style="-fx-background-color: #e0f7fa; -fx-border-color: #006064;"/>
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label style="-fx-font-weight: bold;" text="Ekstra Görünüm:"/>
+                <Button onAction="#onShowGreenChainClick"
+                        style="-fx-background-color: #e0f7fa; -fx-border-color: #006064;"
+                        text="ID Sıralı Zinciri Göster (Yeşil Hat)"/>
             </HBox>
 
-            <HBox spacing="10" alignment="CENTER_LEFT">
-                <Label text="Merkezilik Analizi:" style="-fx-font-weight: bold;"/>
-                <Button text="Seçili Düğümün Arasılığını Hesapla"
-                        onAction="#onCalculateCentralityClick"
-                        style="-fx-background-color: #e1bee7; -fx-border-color: #8e24aa;"/>
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label style="-fx-font-weight: bold;" text="Merkezilik Analizi:"/>
+                <Button onAction="#onCalculateCentralityClick"
+                        style="-fx-background-color: #e1bee7; -fx-border-color: #8e24aa;"
+                        text="Seçili Düğümün Arasılığını Hesapla"/>
             </HBox>
 
-            <Label fx:id="errorLabel" text=""
-                   style="-fx-text-fill: red; -fx-font-weight: bold; -fx-font-size: 12;"
-                   alignment="CENTER_LEFT"/>
+            <Label fx:id="hataEtiketi" alignment="CENTER_LEFT" text=""
+                   style="-fx-text-fill: red; -fx-font-weight: bold; -fx-font-size: 12;"/>
         </VBox>
     </bottom>
 

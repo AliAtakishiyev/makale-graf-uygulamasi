@@ -10,82 +10,78 @@ import java.util.Set;
 
 public class KCoreHesaplama {
 
-    public static List<MakaleDugumu> computeKCore(MakaleGrafı graph, int k) { // Ana Metod
-        List<MakaleDugumu> activeNodes = new ArrayList<>(graph.getAllNodes()); // Kopyalama
+    public static List<MakaleDugumu> computeKCore(MakaleGrafı graf, int k) { // Ana Metod
+        List<MakaleDugumu> aktifDugumler = new ArrayList<>(graf.tumDugumleriGetir()); // Kopyalama
 
-        Set<MakaleDugumu> activeSet = new HashSet<>(activeNodes);
+        Set<MakaleDugumu> aktifKume = new HashSet<>(aktifDugumler);
 
-        boolean removedAny;
+        boolean herhangiSilindiMi;
         do {
-            removedAny = false;
+            herhangiSilindiMi = false;
+            List<MakaleDugumu> silinecekler = new ArrayList<>();
 
-            List<MakaleDugumu> toRemove = new ArrayList<>(); // Silinecekler listesi
+            for (MakaleDugumu dugum : aktifDugumler) {
+                int mevcutDerece = kumedeDereceHesapla(dugum, aktifKume);
 
-            for (MakaleDugumu node : activeNodes) {
-                int currentDegree = calculateDegreeInSet(node, activeSet);
-
-                if (currentDegree < k) {
-                    toRemove.add(node);
+                if (mevcutDerece < k) {
+                    silinecekler.add(dugum);
                 }
             }
 
-            if (!toRemove.isEmpty()) {
-                activeNodes.removeAll(toRemove);
-                activeSet.removeAll(toRemove);
-                removedAny = true;
+            if (!silinecekler.isEmpty()) {
+                aktifDugumler.removeAll(silinecekler);
+                aktifKume.removeAll(silinecekler);
+                herhangiSilindiMi = true;
             }
 
-        } while (removedAny);
+        } while (herhangiSilindiMi);
 
-        return activeNodes; // K şartı sağlanan düğümleri dönderiyoruz
+        return aktifDugumler; // K şartı sağlanan düğümleri dönderiyoruz
     }
 
+    private static int kumedeDereceHesapla(MakaleDugumu dugum, Set<MakaleDugumu> aktifKume) {
+        int derece = 0;
 
-    private static int calculateDegreeInSet(MakaleDugumu node, Set<MakaleDugumu> activeSet) {
-        int degree = 0;
-
-        for (MakaleDugumu source : node.getIncoming()) {
-            if (activeSet.contains(source)) {
-                degree++;
+        for (MakaleDugumu kaynak : dugum.getGelenler()) {
+            if (aktifKume.contains(kaynak)) {
+                derece++;
             }
         }
 
-        for (MakaleDugumu target : node.getOutgoing()) {
-            if (activeSet.contains(target)) {
-                degree++;
+        for (MakaleDugumu hedef : dugum.getGidenler()) {
+            if (aktifKume.contains(hedef)) {
+                derece++;
             }
         }
 
-        return degree;
+        return derece;
     }
 
+    public static List<MakaleDugumu> computeLocalKCore(List<MakaleDugumu> gorunurDugumler, int k) {
+        List<MakaleDugumu> aktifDugumler = new ArrayList<>(gorunurDugumler);
+        Set<MakaleDugumu> aktifKume = new HashSet<>(aktifDugumler);
 
-    public static List<MakaleDugumu> computeLocalKCore(List<MakaleDugumu> visibleNodes, int k) {
-        List<MakaleDugumu> activeNodes = new ArrayList<>(visibleNodes);
-
-        Set<MakaleDugumu> activeSet = new HashSet<>(activeNodes);
-
-        boolean removedAny;
+        boolean herhangiSilindiMi;
         do {
-            removedAny = false;
-            List<MakaleDugumu> toRemove = new ArrayList<>();
+            herhangiSilindiMi = false;
+            List<MakaleDugumu> silinecekler = new ArrayList<>();
 
-            for (MakaleDugumu node : activeNodes) {
-                int currentDegree = calculateDegreeInSet(node, activeSet);
+            for (MakaleDugumu dugum : aktifDugumler) {
+                int mevcutDerece = kumedeDereceHesapla(dugum, aktifKume);
 
-                if (currentDegree < k) {
-                    toRemove.add(node);
+                if (mevcutDerece < k) {
+                    silinecekler.add(dugum);
                 }
             }
 
-            if (!toRemove.isEmpty()) {
-                activeNodes.removeAll(toRemove);
-                activeSet.removeAll(toRemove);
-                removedAny = true;
+            if (!silinecekler.isEmpty()) {
+                aktifDugumler.removeAll(silinecekler);
+                aktifKume.removeAll(silinecekler);
+                herhangiSilindiMi = true;
             }
 
-        } while (removedAny);
+        } while (herhangiSilindiMi);
 
-        return activeNodes;
+        return aktifDugumler;
     }
 }

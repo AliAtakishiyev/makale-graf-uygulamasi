@@ -6,108 +6,98 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 public class MakaleGrafı {
 
-    // id -> node
-    private final Map<String, MakaleDugumu> nodesById = new HashMap<>();
+    // id -> dugum
+    private final Map<String, MakaleDugumu> idyeGoreDugumler = new HashMap<>();
 
     private MakaleGrafı() {
     }
 
+    public static MakaleGrafı buildFromArticles(List<MakaleModeli> makaleler) {
+        MakaleGrafı graf = new MakaleGrafı();
 
-    public static MakaleGrafı buildFromArticles(List<MakaleModeli> articles) {
-        MakaleGrafı graph = new MakaleGrafı();
-
-        for (MakaleModeli article : articles) {
-            graph.nodesById.put(article.getId(), new MakaleDugumu(article));
+        for (MakaleModeli makale : makaleler) {
+            graf.idyeGoreDugumler.put(makale.getId(), new MakaleDugumu(makale));
         }
 
-        for (MakaleDugumu node : graph.nodesById.values()) {
-            MakaleModeli article = node.getArticle();
-            for (String refId : article.getReferencedWorks()) {
-                MakaleDugumu target = graph.nodesById.get(refId);
-                if (target != null) {
-                    node.addOutgoing(target);
-                    target.addIncoming(node);
+        for (MakaleDugumu dugum : graf.idyeGoreDugumler.values()) {
+            MakaleModeli makale = dugum.getMakale();
+            for (String refId : makale.getReferanslar()) {
+                MakaleDugumu hedef = graf.idyeGoreDugumler.get(refId);
+                if (hedef != null) {
+                    dugum.gidenEkle(hedef);
+                    hedef.gelenEkle(dugum);
                 }
             }
         }
-
-        return graph;
+        return graf;
     }
 
-    public MakaleDugumu getNode(String id) {
-        return nodesById.get(id);
+    public MakaleDugumu getDugum(String id) {
+        return idyeGoreDugumler.get(id);
     }
+    public MakaleDugumu getNode(String id) { return getDugum(id); }
 
-    public Collection<MakaleDugumu> getAllNodes() {
-        return Collections.unmodifiableCollection(nodesById.values());
+    public Collection<MakaleDugumu> tumDugumleriGetir() {
+        return Collections.unmodifiableCollection(idyeGoreDugumler.values());
     }
+    public Collection<MakaleDugumu> getAllNodes() { return tumDugumleriGetir(); }
 
-    public int getNodeCount() {
-        return nodesById.size();
+    public int getDugumSayisi() {
+        return idyeGoreDugumler.size();
     }
+    public int getNodeCount() { return getDugumSayisi(); }
 
-
-    public int getEdgeCount() {
-        int sum = 0;
-        for (MakaleDugumu node : nodesById.values()) {
-            sum += node.getOutDegree();
+    public int getKenarSayisi() {
+        int toplam = 0;
+        for (MakaleDugumu dugum : idyeGoreDugumler.values()) {
+            toplam += dugum.getCikisDerecesi();
         }
-        return sum;
+        return toplam;
     }
+    public int getEdgeCount() { return getKenarSayisi(); }
 
-    public int getTotalOutgoingReferences() {
-        return getEdgeCount();
-    }
+    public MakaleIdVeSayisi enCokAtifAlanMakale() {
+        MakaleDugumu enCokAtifAlan = null;
+        int maksGirisDerecesi = -1;
 
-    public int getTotalIncomingReferences() {
-        int sum = 0;
-        for (MakaleDugumu node : nodesById.values()) {
-            sum += node.getInDegree();
-        }
-        return sum;
-    }
-
-    public ArticleIdAndCount getMostCitedArticle() {
-        MakaleDugumu mostCited = null;
-        int maxInDegree = -1;
-
-        for (MakaleDugumu node : nodesById.values()) {
-            int inDegree = node.getInDegree();
-            if (inDegree > maxInDegree) {
-                maxInDegree = inDegree;
-                mostCited = node;
+        for (MakaleDugumu dugum : idyeGoreDugumler.values()) {
+            int girisDerecesi = dugum.getGirisDerecesi();
+            if (girisDerecesi > maksGirisDerecesi) {
+                maksGirisDerecesi = girisDerecesi;
+                enCokAtifAlan = dugum;
             }
         }
 
-        if (mostCited == null) {
-            return new ArticleIdAndCount("", 0);
+        if (enCokAtifAlan == null) {
+            return new MakaleIdVeSayisi("", 0);
         }
-        return new ArticleIdAndCount(mostCited.getArticle().getId(), maxInDegree);
+        return new MakaleIdVeSayisi(enCokAtifAlan.getMakale().getId(), maksGirisDerecesi);
     }
+    public MakaleIdVeSayisi getMostCitedArticle() { return enCokAtifAlanMakale(); }
 
-    public ArticleIdAndCount getMostCitingArticle() {
-        MakaleDugumu mostCiting = null;
-        int maxOutDegree = -1;
+    public MakaleIdVeSayisi enCokAtifVerenMakale() {
+        MakaleDugumu enCokAtifVeren = null;
+        int maksCikisDerecesi = -1;
 
-        for (MakaleDugumu node : nodesById.values()) {
-            int outDegree = node.getOutDegree();
-            if (outDegree > maxOutDegree) {
-                maxOutDegree = outDegree;
-                mostCiting = node;
+        for (MakaleDugumu dugum : idyeGoreDugumler.values()) {
+            int cikisDerecesi = dugum.getCikisDerecesi();
+            if (cikisDerecesi > maksCikisDerecesi) {
+                maksCikisDerecesi = cikisDerecesi;
+                enCokAtifVeren = dugum;
             }
         }
 
-        if (mostCiting == null) {
-            return new ArticleIdAndCount("", 0);
+        if (enCokAtifVeren == null) {
+            return new MakaleIdVeSayisi("", 0);
         }
-        return new ArticleIdAndCount(mostCiting.getArticle().getId(), maxOutDegree);
+        return new MakaleIdVeSayisi(enCokAtifVeren.getMakale().getId(), maksCikisDerecesi);
     }
+    public MakaleIdVeSayisi getMostCitingArticle() { return enCokAtifVerenMakale(); }
 
-    public record ArticleIdAndCount(String articleId, int count) {
+    public record MakaleIdVeSayisi(String makaleId, int sayi) {
+        public String articleId() { return makaleId; }
+        public int count() { return sayi; }
     }
 }
-
-

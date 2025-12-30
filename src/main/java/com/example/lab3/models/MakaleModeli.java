@@ -5,30 +5,29 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-
 public class MakaleModeli {
 
     private final String id;
     private final String doi;
-    private final String title;
-    private final int year;
-    private final List<String> authors;
-    private final List<String> referencedWorks;
+    private final String baslik;
+    private final int yil;
+    private final List<String> yazarlar;
+    private final List<String> referanslar;
 
     public MakaleModeli(
             String id,
             String doi,
-            String title,
-            int year,
-            List<String> authors,
-            List<String> referencedWorks
+            String baslik,
+            int yil,
+            List<String> yazarlar,
+            List<String> referanslar
     ) {
         this.id = Objects.requireNonNull(id, "id null olamaz");
         this.doi = doi;
-        this.title = Objects.requireNonNull(title, "title null olamaz");
-        this.year = year;
-        this.authors = new ArrayList<>(authors != null ? authors : List.of());
-        this.referencedWorks = new ArrayList<>(referencedWorks != null ? referencedWorks : List.of());
+        this.baslik = Objects.requireNonNull(baslik, "baslik null olamaz");
+        this.yil = yil;
+        this.yazarlar = new ArrayList<>(yazarlar != null ? yazarlar : List.of());
+        this.referanslar = new ArrayList<>(referanslar != null ? referanslar : List.of());
     }
 
     public String getId() {
@@ -39,30 +38,32 @@ public class MakaleModeli {
         return doi;
     }
 
-    public String getTitle() {
-        return title;
+    public String getBaslik() {
+        return baslik;
     }
+    public String getTitle() { return getBaslik(); }
 
-    public int getYear() {
-        return year;
+    public int getYil() {
+        return yil;
     }
+    public int getYear() { return getYil(); }
 
-    public List<String> getAuthors() {
-        return Collections.unmodifiableList(authors);
+    public List<String> getYazarlar() {
+        return Collections.unmodifiableList(yazarlar);
     }
+    public List<String> getAuthors() { return getYazarlar(); }
 
-    public List<String> getReferencedWorks() {
-        return Collections.unmodifiableList(referencedWorks);
+    public List<String> getReferanslar() {
+        return Collections.unmodifiableList(referanslar);
     }
+    public List<String> getReferencedWorks() { return getReferanslar(); }
 
     @Override
     public String toString() {
-        return "Article{" +
+        return "Makale{" +
                 "id='" + id + '\'' +
-                ", year=" + year +
-                ", title='" + title + '\'' +
+                ", yil=" + yil +
+                ", baslik='" + baslik + '\'' +
                 '}';
     }
 }
-
-

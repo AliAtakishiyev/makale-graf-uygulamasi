@@ -11,186 +11,182 @@ import java.util.List;
 
 public class JsonOkuyucu {
 
-    private final String text;
-    private int index;
+    private final String metin;
+    private int indeks;
 
-    private JsonOkuyucu(String text) {
-        this.text = text;
-        this.index = 0;
+    private JsonOkuyucu(String metin) {
+        this.metin = metin;
+        this.indeks = 0;
     }
 
-    public static List<MakaleModeli> readArticles(Path path) throws IOException {
-        String content = Files.readString(path, StandardCharsets.UTF_8);
-        JsonOkuyucu reader = new JsonOkuyucu(content);
-        return reader.parseArticleArray();
+    public static List<MakaleModeli> readArticles(Path yol) throws IOException {
+        String icerik = Files.readString(yol, StandardCharsets.UTF_8);
+        JsonOkuyucu okuyucu = new JsonOkuyucu(icerik);
+        return okuyucu.makaleDizisiniAyristir();
     }
 
-    private List<MakaleModeli> parseArticleArray() {
-        skipWhitespace();
-        expect('[');
-        skipWhitespace();
+    private List<MakaleModeli> makaleDizisiniAyristir() {
+        bosluklariAtla();
+        bekle('[');
+        bosluklariAtla();
 
-        List<MakaleModeli> result = new ArrayList<>();
+        List<MakaleModeli> sonuc = new ArrayList<>();
 
         while (true) {
-            skipWhitespace();
-            if (peek() == ']') {
-                consume(); // ]
+            bosluklariAtla();
+            if (gozat() == ']') {
+                tuket(); // ]
                 break;
             }
 
-            MakaleModeli a = parseArticleObject();
-            result.add(a);
+            MakaleModeli a = makaleNesnesiniAyristir();
+            sonuc.add(a);
 
-            skipWhitespace();
-            char c = peek();
+            bosluklariAtla();
+            char c = gozat();
             if (c == ',') {
-                consume();
+                tuket();
                 continue;
             } else if (c == ']') {
-                consume();
+                tuket();
                 break;
             } else {
-                throw error("Makale listesi parse edilirken beklenmeyen karakter: " + c);
+                throw hata("Makale listesi parse edilirken beklenmeyen karakter: " + c);
             }
         }
 
-        return result;
+        return sonuc;
     }
 
-    private MakaleModeli parseArticleObject() {
-        skipWhitespace();
-        expect('{');
+    private MakaleModeli makaleNesnesiniAyristir() {
+        bosluklariAtla();
+        bekle('{');
 
         String id = null;
         String doi = null;
-        String title = null;
-        int year = 0;
-        List<String> authors = new ArrayList<>();
-        List<String> referencedWorks = new ArrayList<>();
+        String baslik = null;
+        int yil = 0;
+        List<String> yazarlar = new ArrayList<>();
+        List<String> referanslar = new ArrayList<>();
 
         while (true) {
-            skipWhitespace();
-            char c = peek();
+            bosluklariAtla();
+            char c = gozat();
             if (c == '}') {
-                consume();
+                tuket();
                 break;
             }
 
-            String key = parseString();
-            skipWhitespace();
-            expect(':');
-            skipWhitespace();
+            String anahtar = stringAyristir();
+            bosluklariAtla();
+            bekle(':');
+            bosluklariAtla();
 
-            switch (key) {
-                case "id" -> id = normalizeId(parseString());
+            switch (anahtar) {
+                case "id" -> id = idNormalizeEt(stringAyristir());
                 case "doi" -> {
-                    char valueStart = peek();
-                    if (valueStart == 'n') { // null
-                        skipValue();
+                    char degerBaslangici = gozat();
+                    if (degerBaslangici == 'n') { // null
+                        degeriAtla();
                     } else {
-                        doi = parseString();
+                        doi = stringAyristir();
                     }
                 }
-                case "title" -> title = parseString();
-                case "year" -> year = parseIntNumber();
-                case "authors" -> authors = parseStringArray();
+                case "title" -> baslik = stringAyristir();
+                case "year" -> yil = tamSayiAyristir();
+                case "authors" -> yazarlar = stringDizisiAyristir();
                 case "referenced_works" -> {
-                    List<String> refs = parseStringArray();
+                    List<String> refs = stringDizisiAyristir();
                     for (int i = 0; i < refs.size(); i++) {
-                        refs.set(i, normalizeId(refs.get(i)));
+                        refs.set(i, idNormalizeEt(refs.get(i)));
                     }
-                    referencedWorks = refs;
+                    referanslar = refs;
                 }
-                default -> skipValue();
+                default -> degeriAtla();
             }
 
-            skipWhitespace();
-            c = peek();
+            bosluklariAtla();
+            c = gozat();
             if (c == ',') {
-                consume();
+                tuket();
                 continue;
             } else if (c == '}') {
-                consume();
+                tuket();
                 break;
             } else {
-                throw error("Nesne içinde beklenmeyen karakter: " + c);
+                throw hata("Nesne içinde beklenmeyen karakter: " + c);
             }
         }
 
-        if (id == null || title == null) {
-            throw error("Makale nesnesinde zorunlu alan eksik: id veya title null.");
+        if (id == null || baslik == null) {
+            throw hata("Makale nesnesinde zorunlu alan eksik: id veya title null.");
         }
 
-        return new MakaleModeli(id, doi, title, year, authors, referencedWorks);
+        return new MakaleModeli(id, doi, baslik, yil, yazarlar, referanslar);
     }
 
+    private List<String> stringDizisiAyristir() {
+        bosluklariAtla();
+        bekle('[');
+        bosluklariAtla();
 
-    private List<String> parseStringArray() {
-        skipWhitespace();
-        expect('[');
-        skipWhitespace();
-
-        List<String> list = new ArrayList<>();
+        List<String> liste = new ArrayList<>();
 
         while (true) {
-            skipWhitespace();
-            char c = peek();
+            bosluklariAtla();
+            char c = gozat();
             if (c == ']') {
-                consume();
+                tuket();
                 break;
             }
 
-            String value = parseString();
-            list.add(value);
+            String deger = stringAyristir();
+            liste.add(deger);
 
-            skipWhitespace();
-            c = peek();
+            bosluklariAtla();
+            c = gozat();
             if (c == ',') {
-                consume();
+                tuket();
             } else if (c == ']') {
-                consume();
+                tuket();
                 break;
             } else {
-                throw error("Dizi içinde beklenmeyen karakter: " + c);
+                throw hata("Dizi içinde beklenmeyen karakter: " + c);
             }
         }
 
-        return list;
+        return liste;
     }
 
-    private String parseString() {
-        skipWhitespace();
-        expect('"');
+    private String stringAyristir() {
+        bosluklariAtla();
+        bekle('"');
         StringBuilder sb = new StringBuilder();
 
         while (true) {
-            if (isAtEnd()) {
-                throw error("String beklenirken dosya sonu geldi.");
+            if (sonaGelindiMi()) {
+                throw hata("String beklenirken dosya sonu geldi.");
             }
-            char c = consume();
+            char c = tuket();
             if (c == '"') {
                 break;
             }
             if (c == '\\') {
-                if (isAtEnd()) {
-                    throw error("Eksik kaçış dizisi.");
+                if (sonaGelindiMi()) {
+                    throw hata("Eksik kaçış dizisi.");
                 }
-                char esc = consume();
-                switch (esc) {
-                    case '"', '\\', '/' -> sb.append(esc);
+                char kacis = tuket();
+                switch (kacis) {
+                    case '"', '\\', '/' -> sb.append(kacis);
                     case 'b' -> sb.append('\b');
                     case 'f' -> sb.append('\f');
                     case 'n' -> sb.append('\n');
                     case 'r' -> sb.append('\r');
                     case 't' -> sb.append('\t');
                     case 'u' -> {
-                        consume();
-                        consume();
-                        consume();
-                        consume();
+                        tuket(); tuket(); tuket(); tuket();
                     }
-                    default -> throw error("Bilinmeyen kaçış dizisi: \\" + esc);
+                    default -> throw hata("Bilinmeyen kaçış dizisi: \\" + kacis);
                 }
             } else {
                 sb.append(c);
@@ -200,123 +196,107 @@ public class JsonOkuyucu {
         return sb.toString();
     }
 
-    private int parseIntNumber() {
-        skipWhitespace();
+    private int tamSayiAyristir() {
+        bosluklariAtla();
         StringBuilder sb = new StringBuilder();
 
-        char c = peek();
+        char c = gozat();
         if (c == '-') {
-            sb.append(consume());
-            c = peek();
+            sb.append(tuket());
+            c = gozat();
         }
 
-        while (!isAtEnd() && Character.isDigit(peek())) {
-            sb.append(consume());
+        while (!sonaGelindiMi() && Character.isDigit(gozat())) {
+            sb.append(tuket());
         }
 
         if (sb.isEmpty()) {
-            throw error("Sayı bekleniyordu ancak bulunamadı.");
+            throw hata("Sayı bekleniyordu ancak bulunamadı.");
         }
 
         return Integer.parseInt(sb.toString());
     }
 
-    private void skipValue() {
-        skipWhitespace();
-        char c = peek();
+    private void degeriAtla() {
+        bosluklariAtla();
+        char c = gozat();
         switch (c) {
-            case '{' -> skipObject();
-            case '[' -> skipArray();
-            case '"' -> {
-                parseString();
-            }
+            case '{' -> nesneyiAtla();
+            case '[' -> diziyiAtla();
+            case '"' -> stringAyristir();
             default -> {
-                while (!isAtEnd()) {
-                    c = peek();
+                while (!sonaGelindiMi()) {
+                    c = gozat();
                     if (c == ',' || c == '}' || c == ']') {
                         break;
                     }
-                    consume();
+                    tuket();
                 }
             }
         }
     }
 
-    private void skipObject() {
-        int depth = 0;
+    private void nesneyiAtla() {
+        int derinlik = 0;
         do {
-            char c = consume();
-            if (c == '{') depth++;
-            else if (c == '}') depth--;
-        } while (depth > 0 && !isAtEnd());
+            char c = tuket();
+            if (c == '{') derinlik++;
+            else if (c == '}') derinlik--;
+        } while (derinlik > 0 && !sonaGelindiMi());
     }
 
-    private void skipArray() {
-        int depth = 0;
+    private void diziyiAtla() {
+        int derinlik = 0;
         do {
-            char c = consume();
-            if (c == '[') depth++;
-            else if (c == ']') depth--;
-        } while (depth > 0 && !isAtEnd());
+            char c = tuket();
+            if (c == '[') derinlik++;
+            else if (c == ']') derinlik--;
+        } while (derinlik > 0 && !sonaGelindiMi());
     }
 
-    private void skipWhitespace() {
-        while (!isAtEnd()) {
-            char c = peek();
+    private void bosluklariAtla() {
+        while (!sonaGelindiMi()) {
+            char c = gozat();
             if (c == ' ' || c == '\t' || c == '\n' || c == '\r') {
-                consume();
+                tuket();
             } else {
                 break;
             }
         }
     }
 
-    private void expect(char expected) {
-        char c = peek();
-        if (c != expected) {
-            throw error("Beklenen karakter '" + expected + "', fakat '" + c + "' bulundu.");
+    private void bekle(char beklenen) {
+        char c = gozat();
+        if (c != beklenen) {
+            throw hata("Beklenen karakter '" + beklenen + "', fakat '" + c + "' bulundu.");
         }
-        consume();
+        tuket();
     }
 
-    private char peek() {
-        if (isAtEnd()) {
-            return '\0';
-        }
-        return text.charAt(index);
+    private char gozat() {
+        if (sonaGelindiMi()) return '\0';
+        return metin.charAt(indeks);
     }
 
-    private char consume() {
-        if (isAtEnd()) {
-            return '\0';
-        }
-        return text.charAt(index++);
+    private char tuket() {
+        if (sonaGelindiMi()) return '\0';
+        return metin.charAt(indeks++);
     }
 
-    private boolean isAtEnd() {
-        return index >= text.length();
+    private boolean sonaGelindiMi() {
+        return indeks >= metin.length();
     }
 
-    private IllegalStateException error(String message) {
-        return new IllegalStateException(message + " (index=" + index + ")");
+    private IllegalStateException hata(String mesaj) {
+        return new IllegalStateException(mesaj + " (index=" + indeks + ")");
     }
 
-    /**
-     * OpenAlex ID'sini normalize eder.
-     * Tam link (https://openalex.org/W123456) formatından sadece ID kısmını (W123456) çıkarır.
-     * Zaten normalize edilmiş ID ise olduğu gibi döndürür.
-     */
-    private static String normalizeId(String id) {
-        if (id == null || id.isBlank()) {
-            return id;
-        }
+    private static String idNormalizeEt(String id) {
+        if (id == null || id.isBlank()) return id;
         id = id.trim();
-        // Eğer https://openalex.org/ ile başlıyorsa, son kısmını al
         if (id.contains("/")) {
             return id.substring(id.lastIndexOf("/") + 1);
         }
         return id;
     }
 }
-
-

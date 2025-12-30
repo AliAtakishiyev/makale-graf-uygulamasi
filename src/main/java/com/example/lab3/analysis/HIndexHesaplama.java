@@ -9,37 +9,33 @@ import java.util.List;
 
 public class HIndexHesaplama {
 
-    public static HIndexSonuc computeForArticle(MakaleGrafı graph, String paperId) {
-        MakaleDugumu center = graph.getNode(paperId);
+    public static HIndexSonuc computeForArticle(MakaleGrafı graf, String makaleId) {
+        MakaleDugumu merkez = graf.getDugum(makaleId);
 
-
-        if (center == null) {
-            throw new IllegalArgumentException("Verilen id ile makale bulunamadı: " + paperId);
+        if (merkez == null) {
+            throw new IllegalArgumentException("Verilen id ile makale bulunamadı: " + makaleId);
         }
 
+        List<MakaleDugumu> atifYapanlar = new ArrayList<>(merkez.getGelenler()); // Atıflar listelenir.
 
-        List<MakaleDugumu> citers = new ArrayList<>(center.getIncoming()); // Atıflar listelenir.
-
-        if (citers.isEmpty()) {
+        if (atifYapanlar.isEmpty()) {
             return new HIndexSonuc(0, 0.0, List.of()); // Atıf yok
         }
 
+        atifYapanlar.sort(Comparator.comparingInt(MakaleDugumu::getGirisDerecesi).reversed()); // Atıfları sıralıyoruz.
 
-        citers.sort(Comparator.comparingInt(MakaleDugumu::getInDegree).reversed()); // Atıfları sıralıyoruz.
-
-
-        List<Integer> citationCounts = new ArrayList<>(); // Sayıları listeliyoruz.
-        for (MakaleDugumu node : citers) {
-            citationCounts.add(node.getInDegree());
+        List<Integer> atifSayilari = new ArrayList<>(); // Sayıları listeliyoruz.
+        for (MakaleDugumu dugum : atifYapanlar) {
+            atifSayilari.add(dugum.getGirisDerecesi());
         }
 
         int h = 0;
-        for (int i = 0; i < citationCounts.size(); i++) { // Hindex bulma algoritması
-            int c = citationCounts.get(i); // Atıf Sayısı
-            int candidateH = i + 1;        // Sıra Numarası
+        for (int i = 0; i < atifSayilari.size(); i++) { // Hindex bulma algoritması
+            int atifSayisi = atifSayilari.get(i);
+            int siraNumarasi = i + 1;
 
-            if (c >= candidateH) {
-                h = candidateH;
+            if (atifSayisi >= siraNumarasi) {
+                h = siraNumarasi;
             } else {
                 break;
             }
@@ -49,19 +45,19 @@ public class HIndexHesaplama {
             return new HIndexSonuc(0, 0.0, List.of());
         }
 
-        List<MakaleDugumu> hCore = new ArrayList<>(citers.subList(0, h));
+        List<MakaleDugumu> hCekirdegi = new ArrayList<>(atifYapanlar.subList(0, h));
+        List<Integer> hCekirdekAtiflari = atifSayilari.subList(0, h);
 
-        List<Integer> hCoreCitations = citationCounts.subList(0, h);
-        double hMedian;
+        double hMedyan;
 
         if (h % 2 == 1) {
-            hMedian = hCoreCitations.get(h / 2);
+            hMedyan = hCekirdekAtiflari.get(h / 2);
         } else {
-            int mid1 = hCoreCitations.get(h / 2 - 1);
-            int mid2 = hCoreCitations.get(h / 2);
-            hMedian = (mid1 + mid2) / 2.0;
+            int orta1 = hCekirdekAtiflari.get(h / 2 - 1);
+            int orta2 = hCekirdekAtiflari.get(h / 2);
+            hMedyan = (orta1 + orta2) / 2.0;
         }
 
-        return new HIndexSonuc(h, hMedian, hCore);
+        return new HIndexSonuc(h, hMedyan, hCekirdegi);
     }
 }
